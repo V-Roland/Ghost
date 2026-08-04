@@ -1,0 +1,29 @@
+{
+  "name": "ghost-interview-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ghost: Microsoft-native interview evidence copilot prototype repo.",
+  "type": "module",
+  "workspaces": [
+    "apps/frontend",
+    "apps/api"
+  ],
+  "scripts": {
+    "setup": "npm install",
+    "dev": "npm run dev --workspace apps/frontend",
+    "dev:api": "npm run dev --workspace apps/api",
+    "build": "npm run build --workspace apps/frontend",
+    "preview": "npm run preview --workspace apps/frontend",
+    "cosmos:init": "node scripts/initCosmos.js",
+    "cosmos:seed": "node scripts/seedGhostData.js",
+    "cosmos:verify": "node scripts/verifyCosmos.js",
+    "cosmos:reset-demo": "npm run cosmos:init && npm run cosmos:seed",
+    "lint:structure": "node scripts/checkRepoStructure.js"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.0.0",
+    "dotenv": "^16.4.5",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {}
+}
