@@ -1,351 +1,144 @@
 # Ghost Interview Copilot
 
-Ghost is a Microsoft-native interview evidence copilot for the Launchpad Cohort 2 hackathon team **Out Of Office**.
+Ghost is a human-in-the-loop interview workspace prototype for preparing questions, organizing evidence, reviewing integrity signals, and archiving interview artifacts. It supports interviewer judgment; it does not make hiring decisions.
 
-The prototype helps interviewers:
-
-- ingest job postings, resumes, CVs, portfolios, and supporting links;
-- generate tailored role-specific interview questions;
-- organize interview folders and evidence packets;
-- store interview artifacts in Azure Cosmos DB for NoSQL;
-- surface review-only integrity signals such as response latency or inconsistent explanations;
-- keep the human interviewer in control of all hiring decisions.
-
-> Ghost is not an automated hiring decision system. It does not reject candidates, make final hiring calls, or claim that a candidate cheated. It is an interviewer support and evidence organization tool.
-
----
-
-## 1. Repository Contents
+## Architecture
 
 ```text
-ghost-interview-copilot/
-├── README.md
-├── .env.example
-├── package.json
-├── scripts/
-│   ├── cosmosConfig.js
-│   ├── initCosmos.js
-│   ├── seedGhostData.js
-│   ├── verifyCosmos.js
-│   └── checkRepoStructure.js
-├── docs/
-│   ├── EER.md
-│   ├── COSMOS_DB.md
-│   ├── UI_SPEC.md
-│   └── AI_AGENT_PROMPTS.md
-├── prompts/
-├── .github/
-│   └── copilot-instructions.md
-└── apps/
-    ├── frontend/
-    │   ├── index.html
-    │   ├── package.json
-    │   └── src/
-    │       ├── main.jsx
-    │       ├── styles.css
-    │       └── data/mockData.js
-    └── api/
-        ├── package.json
-        └── src/
-            ├── server.js
-            ├── routes/
-            │   ├── archive.js
-            │   └── interviews.js
-            └── services/cosmosClient.js
+React + Vite
+  ├─ Supabase Auth (email/password session)
+  └─ Express API (Supabase bearer token)
+       └─ Supabase Postgres + Row Level Security
+            └─ Private Supabase Storage bucket
 ```
 
----
+- **Frontend:** React screens, bottom navigation, profile menu, workflow, and archive.
+- **API:** Express validation and lifecycle endpoints. It verifies access tokens with Supabase Auth and executes requests through a user-scoped Supabase client.
+- **Database:** PostgreSQL tables with foreign keys, ownership constraints, indexes, triggers, and RLS.
+- **Authentication:** Supabase Auth owns credentials, password hashing, session issuance, and refresh tokens.
+- **Storage:** `interview-files` is private; object paths must begin with the authenticated user's UUID.
 
-## 2. Quick Start
+## Requirements
 
-### Install dependencies
+- Node.js 20+
+- npm 10+
+- Supabase CLI for migrations
+- Docker Desktop only when using the local Supabase stack
+- A Supabase project for hosted development
 
-```bash
-npm install
-```
+## Quick Start
 
-### Run the frontend mockup
+1. Install dependencies:
 
-```bash
-npm run dev
-```
+   ```bash
+   npm install
+   ```
 
-This starts the Vite React frontend.
+2. Copy `.env.example` to `.env` and `apps/frontend/.env.example` to `apps/frontend/.env`.
 
-### Run the API prototype
+3. Fill in:
 
-```bash
-npm run dev:api
-```
+   ```text
+   SUPABASE_URL
+   SUPABASE_PUBLISHABLE_KEY
+   SUPABASE_SERVICE_ROLE_KEY
+   VITE_SUPABASE_URL
+   VITE_SUPABASE_PUBLISHABLE_KEY
+   ```
 
-The API defaults to:
+   The two `VITE_` values are browser-visible. Never put `SUPABASE_SERVICE_ROLE_KEY` in a `VITE_` variable.
 
-```text
-http://localhost:7071
-```
+4. Link and migrate a hosted Supabase project:
 
-Health check:
+   ```bash
+   supabase login
+   supabase link --project-ref <project-ref>
+   npm run supabase:preflight
+   npm run supabase:push
+   npm run supabase:verify
+   ```
 
-```bash
-curl http://localhost:7071/health
-```
+5. Start both applications in separate terminals:
 
----
+   ```bash
+   npm run dev:api
+   npm run dev
+   ```
 
-## 3. Azure Cosmos DB Setup
+6. Open `http://localhost:5173` and sign in with a user created through Supabase Auth.
 
-### Step 1: Create an Azure Cosmos DB for NoSQL account
+See `docs/SUPABASE.md` for local development, hosted configuration, optional demo seeding, password settings, and deployment checks.
 
-You can create the account through the Azure Portal, or with Azure CLI:
+## Data Isolation
 
-```bash
-az login
-az group create --name ghost-rg --location eastus
-az cosmosdb create \
-  --name <unique-cosmos-account-name> \
-  --resource-group ghost-rg \
-  --kind GlobalDocumentDB \
-  --locations regionName=eastus failoverPriority=0 isZoneRedundant=False
-```
+Every application-owned row has a UUID `user_id` tied to `auth.users(id)`. RLS policies compare that owner with `(select auth.uid())` for reads and writes. Composite foreign keys include `user_id`, preventing a child record owned by Sally from referencing Nick's interview even when a UUID is known.
 
-### Step 2: Get your endpoint and key
+The API repeats owner predicates as defense in depth, but PostgreSQL RLS is the authorization boundary. The browser never receives a service-role key. Audit events are append-only to authenticated users and are written by database triggers.
 
-```bash
-az cosmosdb show \
-  --name <unique-cosmos-account-name> \
-  --resource-group ghost-rg \
-  --query documentEndpoint \
-  --output tsv
+## Database Lifecycle
 
-az cosmosdb keys list \
-  --name <unique-cosmos-account-name> \
-  --resource-group ghost-rg \
-  --type keys
-```
+The source of truth is `supabase/migrations/20260805000100_ghost_schema.sql`.
 
-### Step 3: Create your local `.env`
-
-```bash
-cp .env.example .env
-```
-
-Fill in:
-
-```env
-COSMOS_ENDPOINT=https://<your-account>.documents.azure.com:443/
-COSMOS_KEY=<your-primary-or-secondary-key>
-COSMOS_DATABASE_ID=ghost-dev
-COSMOS_THROUGHPUT=400
-```
-
-### Step 4: Initialize the database and containers
-
-```bash
-npm run cosmos:init
-```
-
-### Step 5: Seed demo data
-
-```bash
-npm run cosmos:seed
-```
-
-### Step 6: Verify setup
-
-```bash
-npm run cosmos:verify
-```
-
----
-
-## 4. Cosmos DB Containers
-
-Ghost uses Cosmos DB containers instead of relational SQL tables. The EER is logical and maps to NoSQL containers.
-
-| Container | Partition key | Purpose |
-|---|---:|---|
-| `Users` | `/tenantId` | Signed-in users, profile, theme, ownership. |
-| `Interviews` | `/userId` | Central interview ledger for archive and workflow state. |
-| `JobPostings` | `/userId` | Uploaded or pasted job posting context. |
-| `Interviewees` | `/userId` | Candidate identity and interview context. |
-| `Documents` | `/userId` | Metadata for resumes, CVs, transcripts, and job posting files. |
-| `SupplementalLinks` | `/userId` | GitHub, portfolio, website, or approved reference links. |
-| `Questions` | `/userId` | Generated or manual question bank items. |
-| `QuestionResponses` | `/userId` | Candidate responses mapped to questions and transcript references. |
-| `IntegritySignals` | `/userId` | Review-only flags such as response latency or evidence gaps. |
-| `InterviewFiles` | `/userId` | File ledger used by the archive UI and export actions. |
-| `Reports` | `/userId` | Interview evidence packets and integrity signal reports. |
-| `Tags` | `/userId` | User and system tags for archive filtering. |
-| `AuditEvents` | `/userId` | Traceability events for setup, export, and future compliance review. |
-
-See [`docs/EER.md`](docs/EER.md) for the logical EER diagram and container explanations.
-
----
-
-## 5. App Flow
-
-### Home
-
-- Shows “Welcome to Ghost”
-- Primary CTA: Start New Interview
-- Secondary buttons: Archive and Settings
-
-### Start New Interview
-
-```text
-1 Job Posting -> 2 Candidate -> 3 Resume & Links -> 4 Processing -> 5 Supplements -> 6 Review
-```
-
-The flow collects:
-
-1. job posting file or pasted job details;
-2. candidate information;
-3. resume/CV and supporting links;
-4. workspace creation confirmation;
-5. question-generation instructions or manual question bank;
-6. final generated question review.
-
-### Archive
-
-```text
-Archive Root
-└── Job Posting Folder
-    └── Candidate Interview Folder
-        ├── Interview Summary.pdf
-        ├── Job Posting.pdf
-        ├── Resume.pdf
-        ├── Transcript.txt
-        ├── Q&A Log.pdf
-        └── Integrity Report.pdf
-```
-
-Export levels:
-
-| Location | Export action |
+| Command | Purpose |
 |---|---|
-| Root archive | Export All ZIP |
-| Job posting folder | Export This Folder ZIP |
-| Candidate interview folder | Export This Folder ZIP |
+| `npm run supabase:preflight` | Validate the project URL and server-only admin credential. |
+| `npm run supabase:push` | Apply pending migrations to the linked project. |
+| `npm run supabase:seed` | Create isolated demo Auth users and records in an explicitly approved disposable project. |
+| `npm run supabase:verify` | Verify tables and the private storage bucket. |
+| `npm run supabase:verify-isolation` | Prove two-user table, foreign-key, and Storage isolation in a disposable project. |
+| `npm run supabase:reset-local` | Rebuild the local database from migrations and `supabase/seed.sql`. |
 
----
+Demo seeding requires `ALLOW_DEMO_SEED=true`, two 15+ character demo passwords, and `ALLOW_REMOTE_DEMO_SEED=true` for any non-local target. Isolation checks require their own `ALLOW_RLS_TESTS` flags. Never seed or run mutating checks against production.
 
-## 6. DBMS / App-Layer Rules
-
-Cosmos DB does not enforce relational foreign keys. The application layer must enforce relationships and validation.
-
-### Required IDs
-
-Most records should include:
-
-```json
-{
-  "tenantId": "tenant-demo",
-  "userId": "user-demo-nick",
-  "interviewId": "interview-robert-james-2026-07-18"
-}
-```
-
-### Interview status state machine
+## Repository Layout
 
 ```text
-Draft -> UploadsComplete -> QuestionsReady -> InInterview -> Completed -> Archived
+apps/
+  api/
+    src/lib/             API projections, validation, error mapping
+    src/middleware/      Supabase access-token verification
+    src/routes/          Archive, interview, and profile endpoints
+    src/services/        Supabase client construction
+  frontend/
+    src/app/             Application composition
+    src/assets/          Icons grouped by feature
+    src/components/      Shared UI components
+    src/domain/          Pure domain transformations
+    src/hooks/           Profile/session hooks
+    src/screens/         Home, archive, workflow, profile, settings
+    src/services/        Auth, archive, and Supabase adapters
+    src/styles/          Styles grouped by concern
+docs/                    API, database, development, guardrails, UI
+scripts/                 Setup, verification, repository checks
+supabase/                CLI config, migrations, and seed entrypoint
 ```
 
-### Signal guardrails
+## Quality Checks
 
-Use neutral language:
+```bash
+npm run check
+npm run build
+```
 
-- Review recommended
-- Response latency flagged
-- Signal requires human review
-- Evidence packet available
-- Possible inconsistency
-- Missing evidence
+`npm run check` verifies required project structure, security/product guardrails, API behavior, archive mapping, and Supabase schema invariants. A live database check additionally requires a running local stack or configured hosted project.
 
-Avoid:
+## Security and Product Boundaries
 
-- Cheating detected
-- Candidate cheated
-- Fraud confirmed
-- Reject candidate
-- AI hiring score
+- Use only the publishable key in browser code; service-role keys bypass RLS.
+- Treat interview content as sensitive hiring data.
+- Keep object storage private and return controlled access rather than public URLs.
+- Require human review of generated questions, summaries, reports, and integrity signals.
+- Do not present automated conclusions, hiring recommendations, or candidate scores.
+- Define retention, deletion, access review, incident response, and legal/privacy approval before pilot use.
 
-### File handling
+Read `SECURITY.md` and `docs/GUARDRAILS.md` before implementing production integrations.
 
-- Store large files in Blob Storage or another secure file store.
-- Store only metadata and secure references in Cosmos DB.
-- Do not expose raw file URLs publicly.
+## Documentation
 
----
-
-## 7. Available Scripts
-
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Run the frontend mockup. |
-| `npm run dev:api` | Run the API prototype. |
-| `npm run build` | Build the frontend. |
-| `npm run cosmos:init` | Create Cosmos database and containers. |
-| `npm run cosmos:seed` | Seed demo user, job, candidate, questions, files, signals, and report. |
-| `npm run cosmos:verify` | Verify containers and item counts. |
-| `npm run cosmos:reset-demo` | Initialize containers and seed demo data. |
-| `npm run lint:structure` | Check that required repo files exist. |
-
----
-
-## 8. Coding Agent Instructions
-
-This repo includes prompts for coding chatbots and GitHub Copilot:
-
-- [`docs/AI_AGENT_PROMPTS.md`](docs/AI_AGENT_PROMPTS.md)
-- [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
-
-Use these prompts when assigning work to AI coding assistants.
-
-Recommended agent split:
-
-| Agent | Responsibility |
-|---|---|
-| Frontend Agent | React screens, workflow UI, archive UI, theme polish. |
-| Backend / Cosmos Agent | Cosmos scripts, API routes, data validation, export manifests. |
-| GenAI Agent | Azure OpenAI prompts, JSON schemas, question generation, evidence extraction. |
-| QA Agent | Checks guardrails, repo consistency, UI flow, and build readiness. |
-
----
-
-## 9. MVP Scope
-
-The MVP should prove one end-to-end run:
-
-1. Ingest job posting and candidate materials.
-2. Generate tailored interview questions.
-3. Store the question set and candidate workspace.
-4. Display archive hierarchy.
-5. Produce a review-only evidence or integrity packet from transcript/demo data.
-
-Stretch goals:
-
-- Microsoft Graph transcript ingestion.
-- Azure OpenAI structured outputs.
-- Blob Storage integration.
-- Azure Functions conversion from the Express prototype.
-- Export ZIP generation.
-- Teams launch or app packaging.
-
----
-
-## 10. Deployment Notes
-
-This is a starter repository, not a production-ready hiring product.
-
-Before production usage, add:
-
-- Microsoft Entra ID auth;
-- tenant-scoped access controls;
-- secure Blob Storage with SAS or managed identity;
-- PII redaction and retention settings;
-- audit logs;
-- human-review workflow;
-- legal/compliance review for hiring use cases;
-- Graph API tenant permissions and admin consent;
-- Azure Functions deployment pipeline.
+- `docs/SUPABASE.md` — Supabase setup, migrations, keys, Auth, seed, and verification
+- `docs/EER.md` — relational model and ownership constraints
+- `docs/API.md` — bearer-authenticated Express endpoints
+- `docs/DEVELOPMENT.md` — development workflow and validation
+- `docs/GUARDRAILS.md` — product, privacy, and AI safety requirements
+- `docs/UI_SPEC.md` — navigation and interface behavior
+- `CONTRIBUTING.md` — change and review expectations

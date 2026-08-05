@@ -1,74 +1,29 @@
-# GitHub Copilot Instructions — Ghost
+# GitHub Copilot Instructions
 
-Ghost is a Microsoft-native interview evidence copilot. It prepares interviewers, generates role-specific questions, stores interview evidence, and surfaces review-only integrity signals.
+Ghost is a human-in-the-loop interview workspace built with React/Vite, Express, and Supabase.
 
-## Core guardrails
+## Architecture
 
-- Do not implement automatic hiring decisions.
-- Do not implement automatic candidate rejection.
-- Do not label a candidate as cheating.
-- Do not convert integrity signals into a final verdict.
-- Use human-in-the-loop language everywhere.
+- Frontend concerns are separated under `apps/frontend/src`: app, screens, components, domain, hooks, services, assets, and styles.
+- API routes use `authenticateRequest`, verified Supabase bearer tokens, and `req.supabase` user-scoped clients.
+- PostgreSQL schema, RLS, triggers, and private Storage policies live under `supabase/migrations`.
+- Supabase Auth owns password hashing and sessions.
 
-## Preferred language
+## Security Requirements
 
-Use:
+- Never trust body/header `user_id`, role, tenant, or ownership claims.
+- Never expose or use `SUPABASE_SERVICE_ROLE_KEY` in browser code or ordinary user traffic.
+- Every owned table needs `user_id`, composite ownership foreign keys, indexes, grants, forced RLS, and `auth.uid()` policies.
+- Keep Storage private with the user UUID as the first object-path segment.
+- Do not implement custom password hashes, credential tables, or session tables.
+- Do not include real candidate or interview data in code, prompts, logs, or tests.
 
-- Review recommended
-- Response latency flagged
-- Signal requires human review
-- Evidence packet available
-- Possible inconsistency
-- Missing evidence
+## Product Requirements
 
-Avoid:
+- Ghost supports human review; it does not make hiring decisions.
+- Integrity signals are review-only observations, not accusations.
+- Avoid candidate ranking, automated rejection, protected-trait inference, or final scores.
 
-- Cheating detected
-- Fraud confirmed
-- Reject candidate
-- Candidate failed
-- AI hiring score
+## Validation
 
-## Stack
-
-- Frontend: React + Vite
-- API: Node/Express prototype, future Azure Functions
-- DB: Azure Cosmos DB for NoSQL
-- Future integrations: Microsoft Graph, Teams transcripts, Azure OpenAI, Azure AI Speech/Vision, Blob Storage
-
-## Data model
-
-Core containers:
-
-- Users
-- Interviews
-- JobPostings
-- Interviewees
-- Documents
-- SupplementalLinks
-- Questions
-- QuestionResponses
-- IntegritySignals
-- InterviewFiles
-- Reports
-- Tags
-- AuditEvents
-
-Most containers use `/userId` as partition key. `Users` uses `/tenantId`.
-
-## UI flow
-
-- Home
-- Start New Interview workflow
-- Archive root
-- Job posting folder
-- Candidate folder/files
-- Settings
-
-Archive hierarchy:
-
-```text
-Job Posting Folder
-└── Candidate Interview Folder
-    └── Interview Files
-```
+Run `npm run check` and `npm run build`. Apply database migrations to a disposable Supabase stack and test with two users when database behavior changes.

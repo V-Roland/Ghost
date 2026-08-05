@@ -1,21 +1,18 @@
 import express from 'express';
-import { container } from '../services/cosmosClient.js';
+import { fileRecord, interviewRecord } from '../lib/apiRecords.js';
+import { throwIfSupabaseError } from '../lib/supabaseError.js';
 
 export const archiveRouter = express.Router();
 
-function userIdFromRequest(req) {
-  return req.header('x-ghost-user-id') || process.env.DEMO_USER_ID || 'user-demo-nick';
-}
-
 archiveRouter.get('/interviews', async (req, res, next) => {
   try {
-    const userId = userIdFromRequest(req);
-    const querySpec = {
-      query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.updatedAt DESC',
-      parameters: [{ name: '@userId', value: userId }]
-    };
-    const { resources } = await container('Interviews').items.query(querySpec, { partitionKey: userId }).fetchAll();
-    res.json({ interviews: resources });
+    const { data, error } = await req.supabase
+      .from('interviews')
+      .select('id,user_id,job_posting_title,candidate_name,interview_date,status,archive_path,tags,signal_level,created_at,updated_at')
+      .eq('user_id', req.auth.userId)
+      .order('updated_at', { ascending: false });
+    throwIfSupabaseError(error);
+    res.json({ interviews: data.map(interviewRecord) });
   } catch (error) {
     next(error);
   }
@@ -23,16 +20,14 @@ archiveRouter.get('/interviews', async (req, res, next) => {
 
 archiveRouter.get('/interviews/:interviewId/files', async (req, res, next) => {
   try {
-    const userId = userIdFromRequest(req);
-    const querySpec = {
-      query: 'SELECT * FROM c WHERE c.userId = @userId AND c.interviewId = @interviewId ORDER BY c.name ASC',
-      parameters: [
-        { name: '@userId', value: userId },
-        { name: '@interviewId', value: req.params.interviewId }
-      ]
-    };
-    const { resources } = await container('InterviewFiles').items.query(querySpec, { partitionKey: userId }).fetchAll();
-    res.json({ files: resources });
+    const { data, error } = await req.supabase
+      .from('interview_files')
+      .select('id,user_id,interview_id,name,file_type,size_bytes,storage_object_path,created_at,updated_at')
+      .eq('user_id', req.auth.userId)
+      .eq('interview_id', req.params.interviewId)
+      .order('name');
+    throwIfSupabaseError(error);
+    res.json({ files: data.map(fileRecord) });
   } catch (error) {
     next(error);
   }

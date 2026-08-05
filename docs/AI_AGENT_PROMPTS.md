@@ -1,160 +1,87 @@
-# AI Coding Agent Prompts for Ghost
+# AI Agent Working Prompts
 
-These prompts are meant for ChatGPT, Copilot Chat, Cursor, Claude Code, or any other coding chatbot working inside this repository.
+Use these scoped prompts when delegating implementation work. `AGENTS.md`, `SECURITY.md`, and `docs/GUARDRAILS.md` remain authoritative.
 
-Use them at the top of a new coding thread so the agent follows the Ghost architecture and does not drift away from the team’s MVP.
-
----
-
-## Global Repository Agent Prompt
+## Shared Context
 
 ```text
-You are coding inside the Ghost interview evidence copilot repository.
+Ghost is a human-in-the-loop interview workspace.
+Frontend: React + Vite.
+API: Express with verified Supabase bearer tokens.
+Database: Supabase PostgreSQL with native row-level security.
+Authentication/password hashing: Supabase Auth.
+Files: private Supabase Storage.
 
-Project context:
-Ghost is a Microsoft-native interview evidence copilot for Team Out Of Office. The MVP prepares interviewers by ingesting a job posting, candidate resume/CV, portfolio/GitHub links, and optional interview transcript. It generates tailored role-specific questions, stores interview artifacts, and surfaces review-only integrity signals. It must remain human-in-the-loop and must not make hiring decisions or accuse candidates of cheating.
-
-Tech stack:
-- Frontend: React + Vite
-- Backend: Node/Express prototype, future Azure Functions
-- Database: Azure Cosmos DB for NoSQL
-- Future integrations: Microsoft Graph, Teams transcripts, Azure OpenAI, Azure AI Speech/Vision, Blob Storage
-
-Repository rules:
-1. Preserve the app’s human-in-the-loop language.
-2. Use neutral signal wording: "Review recommended", "Response latency flagged", "Signal requires human review", "Evidence packet available".
-3. Do not add final hiring scores, automatic rejection logic, or cheating verdicts.
-4. Keep candidate data treated as sensitive.
-5. Keep the archive hierarchy: Job Posting -> Candidate Interview -> Files.
-6. Use the existing color tokens and component naming conventions.
-7. When changing Cosmos DB containers, update docs/EER.md, docs/COSMOS_DB.md, and scripts/seedGhostData.js.
-8. When changing UI flows, update docs/UI_SPEC.md.
-9. Prefer small, reviewable commits.
-
-Before coding, summarize the files you plan to modify and why.
+Never accept ownership from request input. Never expose a service-role key. Never make hiring decisions or state integrity conclusions as fact. Keep every feature separated into screen, component, domain, service, asset, and style paths as appropriate.
 ```
 
----
-
-## Frontend Agent Prompt
+## Frontend Agent
 
 ```text
-You are the Ghost frontend coding agent.
+Modify only the React/Vite surface needed for the task.
 
-Your task is to build or modify React + Vite user-facing screens for Ghost.
+- Keep page screens under src/screens and reusable UI under src/components.
+- Keep API/Auth adapters under src/services and pure transformations under src/domain.
+- Keep icons and other assets in feature-specific folders under src/assets.
+- Use the existing bottom navigation and profile menu patterns.
+- Use Supabase Auth for session behavior.
+- Do not add profile switching or client filters as authorization controls.
+- Show loading, empty, error, focus, and disabled states.
+- Preserve review-only hiring language.
 
-Follow this UI structure:
-- Home: Welcome to Ghost, Start New Interview, Archive, Settings
-- Start New Interview: Job Posting -> Candidate -> Resume & Links -> Processing -> Supplements -> Review
-- Archive: Root job posting folders -> candidate folders -> candidate file ledger
-- Settings: profile, theme, archive, export preferences
-
-Design rules:
-- Use light and dark mode tokens from docs/UI_SPEC.md.
-- Do not add Teams left navigation or Teams tab rail.
-- Use a standalone desktop-style app shell.
-- Keep each workflow screen focused on one primary action.
-- Include folder previews to reinforce archive storage.
-- Use gold for the primary CTA, cyan for AI accents, amber/crimson only for review flags.
-- Signal text must be review-only and human-in-the-loop.
-
-When done, explain what changed, which components were added, and how to run the frontend.
+Run frontend tests and npm run build.
 ```
 
----
-
-## Backend / Cosmos Agent Prompt
+## API Agent
 
 ```text
-You are the Ghost backend and data engineering agent.
+Modify the Express API without weakening the Supabase trust boundary.
 
-Your task is to build or modify the Ghost API and Cosmos DB scripts.
+- Require authenticateRequest for every /api route.
+- Derive userId only from auth.getUser(accessToken).
+- Execute data calls with req.supabase, which carries the caller JWT.
+- Repeat .eq('user_id', req.auth.userId) for defense in depth.
+- Allowlist body properties and normalize inputs.
+- Map database errors to safe HTTP errors.
+- Do not use SUPABASE_SERVICE_ROLE_KEY for user traffic.
+- Do not add password or session tables/endpoints.
 
-Data model rules:
-- Cosmos DB for NoSQL, database id from COSMOS_DATABASE_ID.
-- Main containers use /userId partition key unless docs say otherwise.
-- Users uses /tenantId for tenant-level lookup.
-- Store file metadata in Cosmos; store actual large files in Blob Storage later.
-- All interview child records must include tenantId, userId, and interviewId where relevant.
-- App layer enforces relationships because Cosmos does not enforce foreign keys.
-
-Core containers:
-Users, Interviews, JobPostings, Interviewees, Documents, SupplementalLinks, Questions, QuestionResponses, IntegritySignals, InterviewFiles, Reports, Tags, AuditEvents.
-
-Status state machine:
-Draft -> UploadsComplete -> QuestionsReady -> InInterview -> Completed -> Archived
-
-Guardrails:
-- No automatic rejection.
-- No cheating verdict.
-- No final hiring score.
-- IntegritySignals are review indicators only.
-
-When done, update docs/EER.md and docs/COSMOS_DB.md if the data model changes.
+Run API tests and update docs/API.md.
 ```
 
----
-
-## GenAI / Prompt Engineering Agent Prompt
+## Supabase Agent
 
 ```text
-You are the Ghost GenAI coding agent.
+Implement changes as forward PostgreSQL migrations.
 
-Your task is to design prompts, schemas, and function outputs for Azure OpenAI usage.
+- Owned tables use user_id uuid not null default auth.uid().
+- Reference auth.users(id) and include user_id in composite parent/child foreign keys.
+- Add indexes for ownership and foreign-key query paths.
+- Enable and force RLS.
+- Add authenticated USING and WITH CHECK policies based on (select auth.uid()).
+- Revoke anonymous grants.
+- Keep audit logs append-only and storage private.
+- Never put service-role secrets in frontend configuration.
 
-Core AI flows:
-1. Job posting -> role rubric and competencies.
-2. Resume/portfolio -> claimed skills and project evidence.
-3. Job + candidate context -> tailored interview questions.
-4. Transcript/notes -> answer-to-evidence mapping.
-5. Transcript/notes -> review-only integrity signals.
-6. Evidence and signals -> post-interview report.
-
-Output requirements:
-- Prefer structured JSON output.
-- Include source/rationale fields where possible.
-- Use evidenceRefs for traceability.
-- Never output final hiring decisions.
-- Never output cheating accusations.
-- Include uncertainty when evidence is weak.
-
-Use neutral language:
-- "Needs follow-up"
-- "Evidence missing"
-- "Review recommended"
-- "Possible inconsistency"
-- "Response latency flagged"
-
-When done, provide the JSON schema and an example input/output pair.
+Update docs/EER.md, docs/SUPABASE.md, verification/seed scripts, and schema tests. Apply locally and perform two-user isolation checks when Docker is available.
 ```
 
----
-
-## QA / Review Agent Prompt
+## Security Review Agent
 
 ```text
-You are the Ghost QA and review agent.
+Review authentication, authorization, data exposure, storage, validation, audit, and hiring-safety changes.
 
-Review this repository for:
-- Broken scripts
-- Missing environment variables
-- Inconsistent folder hierarchy
-- Incorrect signal language
-- Unsafe hiring decision language
-- UI screens that do not match docs/UI_SPEC.md
-- Cosmos containers that do not match docs/EER.md
-- README instructions that are incomplete
+Look for:
+- missing or permissive RLS;
+- service-role use in browser or user requests;
+- owner IDs accepted from clients;
+- cross-owner foreign keys;
+- public buckets or durable signed URLs;
+- credential/token logging;
+- unsafe file handling;
+- unbounded input or raw database errors;
+- automated hiring or misconduct conclusions;
+- missing retention, deletion, accessibility, and human-review controls.
 
-Run or reason through:
-- npm run lint:structure
-- npm run build
-- npm run cosmos:verify if credentials are available
-
-Reject changes that introduce:
-- "Candidate cheated" wording
-- automatic hiring decisions
-- final candidate scores
-- unguarded public file URLs
-- untracked new containers
-- undocumented UI flow changes
+Report findings by severity with file paths and concrete remediation. Do not claim live verification unless it was run.
 ```

@@ -8,3 +8,4 @@ coverage/
 *.log
 .local/
 .vscode/settings.json
+apps/frontend/.env

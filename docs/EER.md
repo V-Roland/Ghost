@@ -1,158 +1,156 @@
-# Ghost Logical EER / Cosmos DB Container Design
+# Ghost PostgreSQL EER
 
-Ghost uses Azure Cosmos DB for NoSQL. Cosmos DB is document-oriented, so this EER is a **logical model** rather than a physical relational schema. The physical implementation uses containers, partition keys, app-level references, and JSON documents.
-
-## Logical EER Diagram
+The physical schema is defined by `supabase/migrations`. Supabase Auth owns credentials and sessions in the `auth` schema; application records live in `public` and reference `auth.users(id)`.
 
 ```mermaid
 erDiagram
-  Users ||--o{ Interviews : owns
-  Users ||--o{ Tags : defines
-  Interviews ||--|| JobPostings : uses
-  Interviews ||--|| Interviewees : evaluates
-  Interviews ||--o{ Documents : stores
-  Interviews ||--o{ SupplementalLinks : references
-  Interviews ||--o{ Questions : includes
-  Interviews ||--o{ QuestionResponses : captures
-  Interviews ||--o{ IntegritySignals : flags
-  Interviews ||--o{ InterviewFiles : archives
-  Interviews ||--o{ Reports : generates
-  Questions ||--o{ QuestionResponses : answered_by
-  QuestionResponses ||--o{ IntegritySignals : supports
-  Reports }o--o{ Questions : cites
-  Reports }o--o{ IntegritySignals : cites
+  AUTH_USERS ||--|| PROFILES : has
+  AUTH_USERS ||--o{ JOB_POSTINGS : owns
+  AUTH_USERS ||--o{ INTERVIEWEES : owns
+  AUTH_USERS ||--o{ INTERVIEWS : owns
+  JOB_POSTINGS o|--o{ INTERVIEWS : describes
+  INTERVIEWEES o|--o{ INTERVIEWS : attends
+  INTERVIEWS ||--o{ DOCUMENTS : contains
+  INTERVIEWS ||--o{ SUPPLEMENTAL_LINKS : references
+  INTERVIEWS ||--o{ QUESTIONS : contains
+  QUESTIONS ||--o{ QUESTION_RESPONSES : receives
+  INTERVIEWS ||--o{ INTEGRITY_SIGNALS : surfaces
+  INTERVIEWS ||--o{ INTERVIEW_FILES : stores
+  INTERVIEWS ||--o{ REPORTS : produces
+  INTERVIEWS ||--o{ TAGS : labels
+  AUTH_USERS ||--o{ AUDIT_EVENTS : owns
 
-  Users {
-    string id
-    string tenantId
-    string aadObjectId
-    string displayName
-    string email
-    string role
-    string themePreference
-    datetime createdAt
-    datetime updatedAt
+  AUTH_USERS {
+    uuid id PK
+    text email
   }
-
-  Interviews {
-    string id
-    string tenantId
-    string userId
-    string jobPostingId
-    string intervieweeId
-    string jobPostingTitle
-    string candidateName
-    date interviewDate
-    string status
-    string archivePath
-    string signalLevel
-    array tags
-    datetime createdAt
-    datetime updatedAt
+  PROFILES {
+    uuid id PK,FK
+    text display_name
+    text role
+    text theme_preference
   }
-
-  JobPostings {
-    string id
-    string tenantId
-    string userId
-    string title
-    string department
-    string location
-    string sourceType
-    string sourceDocumentId
-    string descriptionText
-    array requiredSkills
-    string seniority
-    datetime createdAt
-    datetime updatedAt
+  JOB_POSTINGS {
+    uuid id PK
+    uuid user_id FK
+    text title
+    text department
+    text location
+    text_array required_skills
   }
-
-  Interviewees {
-    string id
-    string tenantId
-    string userId
-    string fullName
-    string email
-    string currentTitle
-    string notes
-    datetime createdAt
-    datetime updatedAt
+  INTERVIEWEES {
+    uuid id PK
+    uuid user_id FK
+    text full_name
+    text email
+    text current_title
   }
-
-  Documents {
-    string id
-    string tenantId
-    string userId
-    string interviewId
-    string documentType
-    string fileName
-    string mimeType
-    string storageUrl
-    string extractionStatus
-    datetime createdAt
-    datetime updatedAt
+  INTERVIEWS {
+    uuid id PK
+    uuid user_id FK
+    uuid job_posting_id FK
+    uuid interviewee_id FK
+    text job_posting_title
+    text candidate_name
+    date interview_date
+    text status
+    text archive_path
+    text_array tags
+    text signal_level
   }
-
-  Questions {
-    string id
-    string tenantId
-    string userId
-    string interviewId
-    string source
-    string questionText
-    string difficulty
-    string category
-    string rationale
-    number sortOrder
-    datetime createdAt
-    datetime updatedAt
+  DOCUMENTS {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    text name
+    text document_type
+    text storage_object_path
   }
-
-  IntegritySignals {
-    string id
-    string tenantId
-    string userId
-    string interviewId
-    string signalType
-    string severity
-    string label
-    string description
-    array evidenceRefs
-    object details
-    datetime createdAt
-    datetime updatedAt
+  SUPPLEMENTAL_LINKS {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    text label
+    text url
+  }
+  QUESTIONS {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    int position
+    text prompt
+    text source
+    boolean approved
+  }
+  QUESTION_RESPONSES {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    uuid question_id FK
+    text response_text
+    text interviewer_notes
+  }
+  INTEGRITY_SIGNALS {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    text signal_type
+    text level
+    jsonb evidence
+    text review_status
+  }
+  INTERVIEW_FILES {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    text name
+    text file_type
+    bigint size_bytes
+    text storage_object_path
+  }
+  REPORTS {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    text status
+    jsonb content
+  }
+  TAGS {
+    uuid id PK
+    uuid user_id FK
+    uuid interview_id FK
+    text name
+  }
+  AUDIT_EVENTS {
+    uuid id PK
+    uuid user_id FK
+    text event_type
+    text entity_type
+    uuid entity_id
+    jsonb details
   }
 ```
 
-## Containers
+## Ownership Invariants
 
-| Container | Partition key | Why it exists | App connection |
-|---|---:|---|---|
-| `Users` | `/tenantId` | Stores signed-in Teams or app users. | Drives homepage, settings, ownership, and archive filtering. |
-| `Interviews` | `/userId` | Central interview ledger. | Powers archive root, candidate folders, status, signal level, and export grouping. |
-| `JobPostings` | `/userId` | Stores uploaded or pasted job posting context. | Used by question generation and folder naming. |
-| `Interviewees` | `/userId` | Stores candidate identity and context. | Used for candidate folder, reports, and generated question personalization. |
-| `Documents` | `/userId` | Stores metadata for uploaded PDFs, resumes, transcripts, and CVs. | Binary files should live in Blob Storage; Cosmos stores pointers. |
-| `SupplementalLinks` | `/userId` | Stores GitHub, portfolio, personal site, or other approved links. | Used by the resume/CV/link upload step and question generation. |
-| `Questions` | `/userId` | Stores generated and manually provided questions. | Used by the question dashboard and final interview set. |
-| `QuestionResponses` | `/userId` | Captures candidate responses mapped to questions. | Supports evidence packets and transcript references. |
-| `IntegritySignals` | `/userId` | Stores review-only signals such as response latency or inconsistent answer patterns. | Powers the Signals tab and post-interview report. |
-| `InterviewFiles` | `/userId` | Stores archive-visible file records. | Powers candidate file ledger and export ZIP manifest. |
-| `Reports` | `/userId` | Stores generated evidence and integrity reports. | Powers report screen and exported packet. |
-| `Tags` | `/userId` | Stores user-defined and system tags. | Powers archive filters and interview organization. |
-| `AuditEvents` | `/userId` | Stores important app events. | Useful for traceability and future compliance review. |
+- `profiles.id` is the Auth user UUID.
+- Every owned table uses a non-null `user_id` referencing `auth.users(id)` with cascading account deletion.
+- Owned parent tables expose a unique `(id, user_id)` key.
+- Child foreign keys contain both the parent ID and `user_id`, so records cannot cross owner boundaries.
+- Interview archive paths are unique per user, not globally.
+- Storage metadata paths must begin with `<user_id>/`.
+- RLS derives visibility from `auth.uid()`, not from browser filters.
 
-## Status State Machine
+## Lifecycle and Audit
+
+Interview status is constrained to:
 
 ```text
 Draft -> UploadsComplete -> QuestionsReady -> InInterview -> Completed -> Archived
 ```
 
-## Guardrail Rules
+The API validates sequential transitions. Database triggers append audit events when an interview is created, its status changes, or a profile is updated. Authenticated users can read their audit events but cannot directly insert, update, or delete them.
 
-- Integrity signals are **review indicators**, not proof of cheating.
-- Ghost should not automatically reject candidates.
-- `overallScore` or signal severity must not be treated as a hiring decision.
-- Large files should be stored outside Cosmos DB, usually in Blob Storage.
-- All candidate data should be treated as sensitive hiring data.
-- The application layer enforces relationships because Cosmos DB does not enforce relational foreign keys.
+## Files
+
+`documents` and `interview_files` store metadata and private object paths. Binary data belongs in the private `interview-files` Storage bucket. The first object-path segment must match the authenticated user's UUID.

@@ -2,8 +2,12 @@
   "name": "ghost-interview-copilot",
   "version": "0.1.0",
   "private": true,
-  "description": "Ghost: Microsoft-native interview evidence copilot prototype repo.",
+  "description": "Ghost: secure human-in-the-loop interview evidence copilot prototype.",
   "type": "module",
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
   "workspaces": [
     "apps/frontend",
     "apps/api"
@@ -14,16 +18,22 @@
     "dev:api": "npm run dev --workspace apps/api",
     "build": "npm run build --workspace apps/frontend",
     "preview": "npm run preview --workspace apps/frontend",
-    "cosmos:init": "node scripts/initCosmos.js",
-    "cosmos:seed": "node scripts/seedGhostData.js",
-    "cosmos:verify": "node scripts/verifyCosmos.js",
-    "cosmos:reset-demo": "npm run cosmos:init && npm run cosmos:seed",
-    "lint:structure": "node scripts/checkRepoStructure.js"
+    "supabase:preflight": "node scripts/preflightSupabase.js",
+    "supabase:push": "supabase db push",
+    "supabase:seed": "node scripts/seedSupabase.js",
+    "supabase:verify": "node scripts/verifySupabase.js",
+    "supabase:verify-isolation": "node scripts/verifySupabaseIsolation.js",
+    "supabase:reset-local": "supabase db reset",
+    "lint:structure": "node scripts/checkRepoStructure.js",
+    "lint:guardrails": "node scripts/checkGuardrails.js",
+    "test:api": "node --test apps/api/test/authSecurity.test.js apps/api/test/interviewLifecycle.test.js apps/api/test/supabaseError.test.js",
+    "test:frontend": "node --test apps/frontend/test/archiveRecords.test.js",
+    "test:supabase": "node --test scripts/test/supabaseSchema.test.js",
+    "test": "npm run test:api && npm run test:frontend && npm run test:supabase",
+    "check": "npm run lint:structure && npm run lint:guardrails && npm run test"
   },
   "dependencies": {
-    "@azure/cosmos": "^4.0.0",
-    "dotenv": "^16.4.5",
-    "uuid": "^10.0.0"
-  },
-  "devDependencies": {}
+    "@supabase/supabase-js": "^2.55.0",
+    "dotenv": "^16.4.5"
+  }
 }

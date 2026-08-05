@@ -1,0 +1,44 @@
+
+:root {
+  --primary-dark-navy: #0B102F;
+  --secondary-navy: #11184A;
+  --ghost-white: #F7F8FC;
+  --soft-gray: #EEF1F7;
+  --gold: #C8942E;
+  --cyan: #27C7D9;
+  --amber: #F4A62A;
+  --crimson: #A6192E;
+  --body-text: #1F2937;
+  --muted-dashboard-text: #B8C0D9;
+  --dock-gray: #55585D;
+  --graphite: #26292D;
+  --graphite-raised: #383C42;
+  --graphite-line: #646970;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: #0a0d20; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.app { min-height: 100vh; padding: 28px; }
+.app.light { background: var(--ghost-white); color: var(--body-text); }
+.app.dark { background: radial-gradient(circle at top left, #17205f, var(--primary-dark-navy) 46%, #06081c); color: var(--ghost-white); }
+
+.card { border-radius: 22px; padding: 24px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); }
+.light .card { background: white; border-color: rgba(11,16,47,.1); }
+.light .elevated { background: var(--soft-gray); }
+.hero h1, .page-header h1, .workflow h1 { margin: 0; font-size: 42px; line-height: 1.05; }
+.workflow h1 { font-size: 34px; }
+p { color: var(--muted-dashboard-text); line-height: 1.55; }
+.light p, .light .muted { color: #657089; }
+.eyebrow { color: var(--gold); text-transform: uppercase; letter-spacing: .1em; font-weight: 800; font-size: 12px; }
+
+button, .primary, .ghost-link { border: 1px solid rgba(255,255,255,.16); border-radius: 12px; padding: 10px 14px; background: transparent; color: inherit; font-weight: 800; }
+.light button, .light .ghost-link { border-color: rgba(11,16,47,.12); }
+.primary { background: var(--gold); color: white; border-color: var(--gold); }
+.ghost-link { color: var(--cyan); border: 0; background: transparent; }
+.back { margin-top: 16px; }
+
+.brand, .top-actions, .action-row, .pill-row, .footer-actions { display: flex; align-items: center; gap: 10px; }
