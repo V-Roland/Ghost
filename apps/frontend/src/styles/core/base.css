@@ -19,7 +19,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: #0a0d20; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
 .app { min-height: 100vh; padding: 28px; }

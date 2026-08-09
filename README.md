@@ -7,7 +7,7 @@ Ghost is a human-in-the-loop interview workspace prototype for preparing questio
 ```text
 React + Vite
   ├─ Supabase Auth (email/password session)
-  └─ Express API (Supabase bearer token)
+  └─ Express API (Supabase bearer token; embedded by Electron on desktop)
        └─ Supabase Postgres + Row Level Security
             └─ Private Supabase Storage bucket
 ```
@@ -16,7 +16,8 @@ React + Vite
 - **API:** Express validation and lifecycle endpoints. It verifies access tokens with Supabase Auth and executes requests through a user-scoped Supabase client.
 - **Database:** PostgreSQL tables with foreign keys, ownership constraints, indexes, triggers, and RLS.
 - **Authentication:** Supabase Auth owns credentials, password hashing, session issuance, and refresh tokens.
-- **Storage:** `interview-files` is private; object paths must begin with the authenticated user's UUID.
+- **Storage:** `interview-files` is private; object paths must begin with the authenticated user's UUID. Database-backed archive folders support optional interview placement, same-interview file drag moves, and single ZIP archive exports.
+- **Desktop:** Electron packages the production UI and API into Windows installer and portable executables while Supabase remains the remote identity and data boundary.
 
 ## Requirements
 
@@ -65,7 +66,7 @@ React + Vite
    npm run dev
    ```
 
-6. Open `http://localhost:5173` and sign in with a user created through Supabase Auth.
+6. Open `http://localhost:5173` and create an account or sign in with an existing Supabase Auth user.
 
 See `docs/SUPABASE.md` for local development, hosted configuration, optional demo seeding, password settings, and deployment checks.
 
@@ -77,7 +78,7 @@ The API repeats owner predicates as defense in depth, but PostgreSQL RLS is the 
 
 ## Database Lifecycle
 
-The source of truth is `supabase/migrations/20260805000100_ghost_schema.sql`.
+The source of truth is the ordered forward migrations under `supabase/migrations`; never rewrite a migration already applied to a shared project.
 
 | Command | Purpose |
 |---|---|
@@ -87,6 +88,8 @@ The source of truth is `supabase/migrations/20260805000100_ghost_schema.sql`.
 | `npm run supabase:verify` | Verify tables and the private storage bucket. |
 | `npm run supabase:verify-isolation` | Prove two-user table, foreign-key, and Storage isolation in a disposable project. |
 | `npm run supabase:reset-local` | Rebuild the local database from migrations and `supabase/seed.sql`. |
+| `npm run desktop:run` | Build and run the secured Electron desktop shell locally. |
+| `npm run desktop:package` | Create Windows installer and portable executables under `release/`. |
 
 Demo seeding requires `ALLOW_DEMO_SEED=true`, two 15+ character demo passwords, and `ALLOW_REMOTE_DEMO_SEED=true` for any non-local target. Isolation checks require their own `ALLOW_RLS_TESTS` flags. Never seed or run mutating checks against production.
 
@@ -104,9 +107,9 @@ apps/
     src/assets/          Icons grouped by feature
     src/components/      Shared UI components
     src/domain/          Pure domain transformations
-    src/hooks/           Profile/session hooks
+    src/hooks/           Profile/session and workflow state hooks
     src/screens/         Home, archive, workflow, profile, settings
-    src/services/        Auth, archive, and Supabase adapters
+    src/services/        Auth, archive files/export, workflow, upload, and Supabase adapters
     src/styles/          Styles grouped by concern
 docs/                    API, database, development, guardrails, UI
 scripts/                 Setup, verification, repository checks
@@ -141,4 +144,5 @@ Read `SECURITY.md` and `docs/GUARDRAILS.md` before implementing production integ
 - `docs/DEVELOPMENT.md` — development workflow and validation
 - `docs/GUARDRAILS.md` — product, privacy, and AI safety requirements
 - `docs/UI_SPEC.md` — navigation and interface behavior
+- `docs/DESKTOP.md` — Electron architecture, configuration, packaging, and release security
 - `CONTRIBUTING.md` — change and review expectations

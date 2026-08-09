@@ -41,6 +41,14 @@ Terminal two:
 npm run dev
 ```
 
+For a production-mode desktop smoke test, stop the standalone API and frontend processes, then run:
+
+```bash
+npm run desktop:run
+```
+
+The Electron shell starts its own loopback API on a random port. Windows packaging instructions and signing requirements are in `docs/DESKTOP.md`.
+
 The API exits early when `SUPABASE_URL` or `SUPABASE_PUBLISHABLE_KEY` is missing. The UI presents a configuration error when its Supabase variables are missing.
 
 ## Validation
@@ -57,6 +65,7 @@ npm run build
 - browser secret checks;
 - API validation and authentication helpers;
 - frontend archive transformations;
+- frontend workflow validation and payload transformations;
 - static migration/RLS invariants.
 
 For schema work, validate against real Postgres:
@@ -76,6 +85,10 @@ If Docker is unavailable, record that live migration validation was not run; sta
 - Never use a service-role client for an end-user API request.
 - Add RLS, grants, ownership constraints, indexes, tests, and docs with every owned table.
 - Use private Storage paths beginning with the authenticated user's UUID.
+- Stage workflow uploads under `<user-id>/<interview-id>/` and commit metadata through the workspace RPC.
+- Build archive ZIP exports from the API manifest, reject unsafe relative paths, and keep binary assembly inside the archive service boundary.
+- Keep executable filesystem access behind the archive file-service boundary; UI components must not receive unrestricted native paths.
+- Keep autocomplete menus implemented in the local workflow component path; do not add a dropdown dependency for these controls.
 - Keep generated interview output review-only and human-in-the-loop.
 
 ## Schema Workflow

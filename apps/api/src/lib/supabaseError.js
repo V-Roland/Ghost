@@ -9,6 +9,9 @@ export function throwIfSupabaseError(error, fallbackCode = 'DATABASE_REQUEST_FAI
   if (error.code === '23505') {
     throw new HttpError(409, 'RESOURCE_CONFLICT', 'A matching record already exists.');
   }
+  if (error.code === '22023' || error.code === '23514' || error.code === '22P02') {
+    throw new HttpError(400, 'INVALID_REQUEST', 'The workspace data did not satisfy database validation.');
+  }
   if (error.code === '42501') {
     throw new HttpError(403, 'ACCESS_DENIED', 'The requested operation is not permitted.');
   }

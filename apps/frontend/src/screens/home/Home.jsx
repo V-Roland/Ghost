@@ -11,12 +11,13 @@ export default function Home({ profile, jobs, setScreen, setWorkflowStep }) {
         <span className="eyebrow">AI Interview Copilot</span>
         <h1>Welcome, {firstName}</h1>
         <p>Prepare role-specific questions, organize interview evidence, and surface review-only integrity signals without replacing human judgment.</p>
-        <button className="primary" onClick={() => { setWorkflowStep(1); setScreen('start'); }}>Start New Interview</button>
-        <div className="pill-row">
-          <button onClick={() => setScreen('archive')}>Archive</button>
-          <button onClick={() => setScreen('settings')}>Settings</button>
+        <div className="home-actions">
+          <button className="primary" onClick={() => { setWorkflowStep(1); setScreen('start'); }}>Start New Interview</button>
+          <div className="pill-row">
+            <button onClick={() => setScreen('archive')}>Archive</button>
+            <button onClick={() => setScreen('settings')}>Settings</button>
+          </div>
         </div>
-        <div className="profile-owner-line"><span className="profile-avatar">{profile.initials}</span><span>Workspace owned by {profile.displayName}</span></div>
       </div>
       <div className="card">
         <h2>Recent workspace</h2>

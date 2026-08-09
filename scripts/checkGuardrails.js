@@ -12,11 +12,19 @@ const requiredFiles = [
   '.github/PULL_REQUEST_TEMPLATE.md',
   '.github/workflows/quality.yml',
   'apps/api/test/interviewLifecycle.test.js',
+  'apps/api/test/archiveFolders.test.js',
   'apps/api/test/authSecurity.test.js',
   'apps/api/test/supabaseError.test.js',
   'apps/frontend/test/archiveRecords.test.js',
+  'apps/frontend/test/archiveDirectories.test.js',
+  'apps/frontend/test/zipArchive.test.js',
+  'apps/frontend/test/interviewDraft.test.js',
   'scripts/test/supabaseSchema.test.js',
-  'supabase/migrations/20260805000100_ghost_schema.sql'
+  'supabase/migrations/20260805000100_ghost_schema.sql',
+  'supabase/migrations/20260806000100_interview_workspace_creation.sql',
+  'supabase/migrations/20260806000200_job_posting_sources.sql',
+  'supabase/migrations/20260806000300_archive_folders.sql',
+  'supabase/migrations/20260807000100_interview_directory_placement.sql'
 ];
 
 const requiredGuardrailTopics = [
@@ -87,10 +95,14 @@ for (const sourceFile of filesUnder('apps/frontend/src')) {
 }
 
 if (fs.existsSync('supabase/migrations/20260805000100_ghost_schema.sql')) {
-  const migration = fs.readFileSync('supabase/migrations/20260805000100_ghost_schema.sql', 'utf8').toLowerCase();
+  const migration = fs.readdirSync('supabase/migrations')
+    .filter((file) => file.endsWith('.sql'))
+    .map((file) => fs.readFileSync(path.join('supabase/migrations', file), 'utf8'))
+    .join('\n')
+    .toLowerCase();
   const protectedTables = [
     'profiles', 'job_postings', 'interviewees', 'interviews', 'documents', 'supplemental_links',
-    'questions', 'question_responses', 'integrity_signals', 'interview_files', 'reports', 'tags', 'audit_events'
+    'questions', 'question_responses', 'integrity_signals', 'interview_files', 'archive_folders', 'reports', 'tags', 'audit_events'
   ];
   for (const table of protectedTables) {
     if (!migration.includes(`public.${table}`)) {

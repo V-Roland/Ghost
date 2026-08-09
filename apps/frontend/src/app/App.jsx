@@ -5,11 +5,14 @@ import useActiveProfile from '../hooks/profile/useActiveProfile.js';
 import CandidateFiles from '../screens/archive/candidate/CandidateFiles.jsx';
 import ArchiveJob from '../screens/archive/job/ArchiveJob.jsx';
 import ArchiveRoot from '../screens/archive/root/ArchiveRoot.jsx';
+import ArchiveFolder from '../screens/archive/folder/ArchiveFolder.jsx';
 import Home from '../screens/home/Home.jsx';
 import ProfileSignIn from '../screens/profile/sign-in/ProfileSignIn.jsx';
+import ProfileSignUp from '../screens/profile/sign-up/ProfileSignUp.jsx';
 import Settings from '../screens/settings/Settings.jsx';
 import StartWorkflow from '../screens/workflow/StartWorkflow.jsx';
 import * as archiveService from '../services/archive/archiveService.js';
+import { createInterviewWorkspace } from '../services/workflow/workflowService.js';
 
 export default function App() {
   const {
@@ -19,6 +22,7 @@ export default function App() {
     initializationError,
     loading: profileLoading,
     login,
+    register,
     signOut,
     updateProfile
   } = useActiveProfile();
@@ -29,12 +33,15 @@ export default function App() {
   const [screen, setScreen] = useState('home');
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [folderTrail, setFolderTrail] = useState([]);
+  const [folderOrigin, setFolderOrigin] = useState('archive');
   const [workflowStep, setWorkflowStep] = useState(1);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [authenticationScreen, setAuthenticationScreen] = useState('sign-in');
 
   const rootClass = useMemo(() => `app ${theme}`, [theme]);
-  const activeDestination = ['archive', 'job', 'candidate'].includes(screen)
+  const activeDestination = ['archive', 'job', 'candidate', 'folder'].includes(screen)
     ? 'archive'
     : screen === 'settings'
       ? 'settings'
@@ -46,10 +53,12 @@ export default function App() {
     setArchiveRecords([]);
     setSelectedJob(null);
     setSelectedCandidate(null);
+    setFolderTrail([]);
     setArchiveError('');
     setArchiveLoading(true);
     setTheme(activeProfile.themePreference || 'dark');
     setScreen('home');
+    setAuthenticationScreen('sign-in');
     setNavigationOpen(false);
     setProfileOpen(false);
     archiveService.loadArchive()
@@ -82,6 +91,7 @@ export default function App() {
 
   const navigate = (destination) => {
     setScreen(destination);
+    setFolderTrail([]);
     setNavigationOpen(false);
     setProfileOpen(false);
   };
@@ -103,13 +113,43 @@ export default function App() {
   };
 
   const handleWorkflowComplete = async (draft) => {
-    await archiveService.createInterview(draft);
+    await createInterviewWorkspace(draft);
     const jobs = await archiveService.loadArchive();
     setArchiveRecords(jobs);
     setSelectedJob(jobs[0] || null);
     setSelectedCandidate(jobs[0]?.candidates[0] || null);
     setWorkflowStep(1);
     setScreen('archive');
+  };
+
+  const handleOpenFolder = (folder, origin) => {
+    if (origin) {
+      setFolderOrigin(origin);
+      setFolderTrail([folder]);
+    } else {
+      setFolderTrail((current) => [...current, folder]);
+    }
+    setScreen('folder');
+  };
+
+  const handleFolderBack = () => {
+    if (folderTrail.length > 1) {
+      setFolderTrail((current) => current.slice(0, -1));
+    } else {
+      setFolderTrail([]);
+      setScreen(folderOrigin);
+    }
+  };
+
+  const handleSelectFolderInterview = (interview) => {
+    const job = archiveRecords.find((record) => record.jobPostingId === interview.jobPostingId);
+    const candidate = job?.candidates.find((record) => record.interviewId === interview.id);
+    if (!job || !candidate) {
+      setArchiveError('The selected interview could not be found in the current archive.');
+      return;
+    }
+    setSelectedJob(job);
+    handleSelectCandidate(candidate);
   };
 
   const handleThemeChange = async (nextTheme) => {
@@ -131,7 +171,19 @@ export default function App() {
     return (
       <main className={rootClass}>
         <div className="app-window profile-window">
-          <ProfileSignIn configurationError={initializationError} onLogin={login} />
+          {authenticationScreen === 'sign-up' ? (
+            <ProfileSignUp
+              configurationError={initializationError}
+              onRegister={register}
+              onSignIn={() => setAuthenticationScreen('sign-in')}
+            />
+          ) : (
+            <ProfileSignIn
+              configurationError={initializationError}
+              onLogin={login}
+              onSignUp={() => setAuthenticationScreen('sign-up')}
+            />
+          )}
         </div>
       </main>
     );
@@ -151,10 +203,11 @@ export default function App() {
           {archiveError && <div className="auth-error" role="alert">{archiveError}</div>}
           {archiveLoading && <div className="profile-loading">Loading your archive…</div>}
           {screen === 'home' && <Home profile={activeProfile} jobs={archiveRecords} setScreen={setScreen} setWorkflowStep={setWorkflowStep} />}
-          {screen === 'archive' && <ArchiveRoot profile={activeProfile} jobs={archiveRecords} setScreen={setScreen} setSelectedJob={setSelectedJob} />}
-          {screen === 'job' && selectedJob && <ArchiveJob job={selectedJob} onSelectCandidate={handleSelectCandidate} />}
-          {screen === 'candidate' && selectedJob && selectedCandidate && <CandidateFiles job={selectedJob} candidate={selectedCandidate} setScreen={setScreen} />}
-          {screen === 'start' && <StartWorkflow step={workflowStep} setWorkflowStep={setWorkflowStep} setScreen={setScreen} onComplete={handleWorkflowComplete} />}
+          {screen === 'archive' && <ArchiveRoot profile={activeProfile} jobs={archiveRecords} setScreen={setScreen} setSelectedJob={setSelectedJob} onOpenFolder={handleOpenFolder} />}
+          {screen === 'job' && selectedJob && <ArchiveJob job={selectedJob} onSelectCandidate={handleSelectCandidate} onOpenFolder={handleOpenFolder} />}
+          {screen === 'candidate' && selectedJob && selectedCandidate && <CandidateFiles job={selectedJob} candidate={selectedCandidate} setScreen={setScreen} onOpenFolder={handleOpenFolder} />}
+          {screen === 'folder' && folderTrail.length > 0 && <ArchiveFolder folderTrail={folderTrail} onBack={handleFolderBack} onOpenFolder={(folder) => handleOpenFolder(folder)} onSelectInterview={handleSelectFolderInterview} />}
+          {screen === 'start' && <StartWorkflow step={workflowStep} setWorkflowStep={setWorkflowStep} setScreen={setScreen} onComplete={handleWorkflowComplete} positions={archiveRecords} />}
           {screen === 'settings' && <Settings profile={activeProfile} authenticationMethod={authenticationMethod} onChangePassword={changePassword} theme={theme} setTheme={handleThemeChange} />}
         </div>
         {navigationOpen && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setNavigationOpen(false)} />}

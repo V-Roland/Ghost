@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function ProfileSignIn({ configurationError, onLogin }) {
+export default function ProfileSignIn({ configurationError, onLogin, onSignUp }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,6 +36,10 @@ export default function ProfileSignIn({ configurationError, onLogin }) {
           {error && <div className="auth-error" role="alert">{error}</div>}
           <button className="primary" type="submit" disabled={submitting || Boolean(configurationError)}>{submitting ? 'Signing in…' : 'Sign in'}</button>
         </form>
+        <div className="auth-switch">
+          <span>New to Ghost?</span>
+          <button className="ghost-link" type="button" onClick={onSignUp}>Create an account</button>
+        </div>
       </div>
     </section>
   );

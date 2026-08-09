@@ -21,12 +21,19 @@
 .profile-login-form, .password-form { display: grid; gap: 14px; margin-top: 22px; }
 .profile-login-form label, .password-form label { display: grid; gap: 7px; color: var(--muted-dashboard-text); font-size: 12px; font-weight: 800; }
 .profile-login-form input, .password-form input { width: 100%; padding: 12px 14px; color: inherit; border: 1px solid rgba(255,255,255,.16); border-radius: 12px; background: rgba(255,255,255,.06); }
+.profile-login-form small { color: var(--muted-dashboard-text); font-size: 11px; font-weight: 600; line-height: 1.5; }
 .light .profile-login-form input, .light .password-form input { border-color: rgba(11,16,47,.14); background: var(--ghost-white); }
+.light .profile-login-form small { color: #657089; }
+.auth-switch { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 18px; color: var(--muted-dashboard-text); font-size: 12px; font-weight: 700; }
+.light .auth-switch { color: #657089; }
+.auth-switch .ghost-link { padding: 7px 8px; }
+.auth-confirmation { display: grid; gap: 10px; }
+.auth-confirmation h1, .auth-confirmation p { margin: 0; }
+.auth-confirmation strong { color: inherit; overflow-wrap: anywhere; }
+.auth-confirmation .primary { justify-self: start; margin-top: 10px; }
 .auth-error { padding: 10px 12px; color: #FFD7D7; border: 1px solid rgba(166,25,46,.55); border-radius: 10px; background: rgba(166,25,46,.18); font-size: 12px; }
 .light .auth-error { color: #7B1022; }
 .demo-profile-section { display: grid; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); }
 .profile-sign-in-options { display: grid; gap: 10px; margin: 24px 0 16px; }
 .profile-sign-in-options button { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; width: 100%; padding: 14px; text-align: left; }
-.profile-owner-line { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--muted-dashboard-text); font-size: 13px; }
-.light .profile-owner-line { color: #68728A; }
 .profile-loading { display: grid; place-items: center; min-height: 100%; color: var(--muted-dashboard-text); font-weight: 800; }

@@ -9,3 +9,5 @@ coverage/
 .local/
 .vscode/settings.json
 apps/frontend/.env
+.desktop-build/
+release/

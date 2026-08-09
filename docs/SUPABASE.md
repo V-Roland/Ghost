@@ -12,6 +12,10 @@ Ghost uses Supabase Auth, PostgreSQL, PostgREST, and private Storage. The checke
 
 Do not create production tables manually in the dashboard. Capture changes in forward migrations.
 
+The workflow uses ordered forward migrations for the base schema, workspace creation, job-posting source linkage, literal archive folders, and interview directory placement. Apply all pending migrations before testing uploads, folders, drag moves, or archive exports.
+
+The source-link migration first maps legacy title-only interviews to an existing same-owner position or creates a manual-backed position when none exists. It then makes `interviews.job_posting_id` mandatory, so future interviews cannot exist outside a position workspace.
+
 ## Keys and Environment
 
 Copy `.env.example` to `.env`:
@@ -59,7 +63,9 @@ The publishable key is designed for public clients when RLS is correctly enabled
    npm run supabase:verify
    ```
 
-6. Create initial users through Supabase Auth or the guarded demo seed script.
+6. Create initial users through the Ghost sign-up screen, Supabase Auth, or the guarded demo seed script. Public sign-ups must remain enabled for self-registration; disable them when an invite-only deployment is required.
+
+The sign-up screen sends only `display_name` as user metadata. The database trigger creates the matching `profiles` row with the fixed `Interviewer` display role; user-supplied metadata is never used as an authorization claim. When email confirmation is enabled, Ghost shows a verification-required state and does not treat the user as authenticated until Supabase issues a session.
 
 ## Local Development
 
@@ -128,6 +134,29 @@ Adding a table to `public` without RLS is a release blocker. Add the table, inde
 
 Storage policies compare the first path segment to `auth.uid()`. Application metadata repeats this ownership prefix. Use signed URLs only for short, purpose-limited access and never persist them as database records.
 
+### Upload Commit Flow
+
+1. The authenticated browser generates the interview UUID.
+2. Files are staged directly in the private bucket under `<auth-user-id>/<interview-id>/` using the publishable client and active session.
+3. The bearer-authenticated API validates the complete workspace request.
+4. `create_interview_workspace` commits the position, candidate, interview, links, questions, and file metadata in one RLS-protected transaction.
+5. Job-posting metadata is linked to the owned position by a database trigger and marks that position as upload-backed; without a posting file, the position remains manual-backed.
+6. If the database request fails, the browser removes the staged objects before surfacing the error.
+
+The frontend limits each object to 50 MB and does not create public URLs. The function is security invoker, derives the owner from `auth.uid()`, and checks that every metadata path belongs to the new interview workspace. Until document extraction is implemented, an uploaded posting automatically provides an editable title from its filename; the private file remains the authoritative source rather than simulated extracted text.
+
+### Archive Folders and Local Export
+
+- Position and candidate folders are persisted by `job_postings` and `interviews`.
+- User-created and nested directories are persisted by `archive_folders` with forced RLS and composite owner references.
+- `interviews.archive_folder_id` optionally places an interview in an owned root or matching-position directory; a trigger rejects cross-owner, cross-position, and interview-inside-interview placement.
+- `interview_files.folder_id` is optional, but a database trigger rejects placement outside the file's interview.
+- Dragging an existing file onto a folder updates only `interview_files.folder_id`; the private Storage object stays in place and remains protected by the same owner path.
+- File opening uses a short-lived signed URL; explicit download uses the active user's private Storage policy.
+- Export builds paths from database records, downloads each object through the authenticated client, and creates one client-side ZIP without exposing permanent object URLs.
+- ZIP entries use relative manifest paths, preserve empty directories, reject traversal segments, and are limited to the standard non-Zip64 4 GB archive boundary.
+- The Electron wrapper retains this service contract, pauses renderer downloads for an explicit save destination, and does not grant web content unrestricted filesystem access.
+
 ## Production Checklist
 
 - [ ] Migrations applied from CI/CD or a controlled release process
@@ -135,6 +164,12 @@ Storage policies compare the first path segment to `auth.uid()`. Application met
 - [ ] Service-role key stored only in server-side secret management
 - [ ] Auth URLs, email confirmation, SMTP, rate limits, password controls, and MFA reviewed
 - [ ] Storage bucket private and object policies tested with two real users
+- [ ] Job posting, resume, and supplemental uploads tested with an authenticated non-admin user
+- [ ] `create_interview_workspace` rejects another user's position ID and mismatched object paths
+- [ ] Job-posting uploads set `source_type = 'upload'` and link `interview_files.job_posting_id` to the same owner
+- [ ] Custom folders cannot reference another user's position, interview, parent folder, or file
+- [ ] Interview directory placement rejects another user's folder, a different position's folder, and any interview-scoped folder
+- [ ] ZIP export preserves folder paths, rejects traversal entries, and never stores permanent signed URLs
 - [ ] Sally cannot read, mutate, reference, or list Nick's rows or objects
 - [ ] Access-token lifetime and global sign-out behavior reviewed
 - [ ] Backups, point-in-time recovery, retention, deletion, and incident response configured

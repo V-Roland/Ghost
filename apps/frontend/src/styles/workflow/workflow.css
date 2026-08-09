@@ -1,18 +1,94 @@
-
 .progress { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 .progress span { border-radius: 999px; padding: 8px 10px; background: rgba(255,255,255,.06); color: var(--muted-dashboard-text); font-size: 13px; }
 .progress .on { background: rgba(200,148,46,.18); color: var(--gold); border: 1px solid rgba(200,148,46,.4); }
 .light .progress span { background: var(--soft-gray); color: #657089; }
-.workflow { display: grid; gap: 16px; }
-.upload { display: grid; gap: 8px; border: 1.5px dashed var(--cyan); background: rgba(39,199,217,.08); border-radius: 18px; padding: 20px; }
-.upload span { color: var(--muted-dashboard-text); }
-.light .upload span { color: #657089; }
+.workflow { display: grid; gap: 20px; }
+.workflow > h1 { margin-bottom: 0; }
+.workflow > p { margin-top: -10px; color: var(--muted-dashboard-text); }
+.light .workflow > p { color: #657089; }
+.workflow-section { display: grid; gap: 18px; }
+.workflow-screen:focus { outline: none; }
+.workflow-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.workflow-field { display: grid; align-content: start; gap: 7px; min-width: 0; }
+.workflow-field > span { font-weight: 800; }
+.workflow-field > label { font-weight: 800; }
+.workflow-field small { color: var(--muted-dashboard-text); line-height: 1.4; }
+.light .workflow-field small { color: #657089; }
+.workflow-field input,
+.workflow-field select,
+.workflow-field textarea { width: 100%; color: inherit; border: 1px solid rgba(255,255,255,.16); border-radius: 12px; background: rgba(255,255,255,.06); padding: 12px 14px; }
+.workflow-field textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
+.workflow-field select { color-scheme: dark; }
+.light .workflow-field input,
+.light .workflow-field select,
+.light .workflow-field textarea { border-color: rgba(11,16,47,.14); background: var(--ghost-white); color-scheme: light; }
+.workflow-field input:focus,
+.workflow-field select:focus,
+.workflow-field textarea:focus { outline: 2px solid rgba(39,199,217,.48); border-color: var(--cyan); }
+.autocomplete-field { position: relative; z-index: 3; }
+.autocomplete-field:focus-within { z-index: 100; }
+.custom-dropdown-field { position: relative; z-index: 3; }
+.custom-dropdown-field:focus-within { z-index: 100; }
+.custom-dropdown-control { position: relative; width: 100%; }
+.custom-dropdown-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 45px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.16); border-radius: 12px; background: rgba(255,255,255,.06); color: inherit; text-align: left; }
+.light .custom-dropdown-trigger { border-color: rgba(11,16,47,.14); background: var(--ghost-white); }
+.custom-dropdown-trigger:focus { outline: 2px solid rgba(39,199,217,.48); border-color: var(--cyan); }
+.custom-dropdown-trigger span:last-child { color: var(--cyan); font-size: 1.1rem; }
+.autocomplete-control { position: relative; width: 100%; }
+.autocomplete-menu { position: absolute; z-index: 80; top: calc(100% + 7px); left: 50%; width: 100%; max-height: 240px; overflow-y: auto; transform: translateX(-50%); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,.16); background: #242a3e; box-shadow: 0 18px 40px rgba(0,0,0,.38); }
+.light .autocomplete-menu { border-color: rgba(11,16,47,.14); background: white; box-shadow: 0 18px 40px rgba(11,16,47,.16); }
+.autocomplete-menu button { display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: 9px; text-align: left; font-weight: 700; }
+.autocomplete-menu button:hover, .autocomplete-menu button.active { color: white; background: rgba(39,199,217,.2); }
+.light .autocomplete-menu button:hover, .light .autocomplete-menu button.active { color: #0b102f; background: rgba(39,199,217,.17); }
+.workflow-source { display: grid; gap: 4px; padding: 12px 14px; border-radius: 13px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+.workflow-source span { color: var(--muted-dashboard-text); }
+.light .workflow-source { border-color: rgba(11,16,47,.1); background: rgba(11,16,47,.03); }
+.light .workflow-source span { color: #657089; }
+.upload { display: grid; gap: 10px; border: 1.5px dashed rgba(39,199,217,.75); background: rgba(39,199,217,.07); border-radius: 18px; padding: 18px; }
+.upload > span { color: var(--muted-dashboard-text); }
+.light .upload > span { color: #657089; }
+.upload-dropzone { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-height: 46px; }
+.upload-dropzone > span { flex: 1 1 220px; color: var(--muted-dashboard-text); }
+.light .upload-dropzone > span { color: #657089; }
+.upload-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.upload-files { display: grid; gap: 8px; }
+.upload-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 12px; padding: 10px 12px; background: rgba(0,0,0,.16); border: 1px solid rgba(255,255,255,.1); }
+.light .upload-file { background: rgba(11,16,47,.04); border-color: rgba(11,16,47,.1); }
+.upload-file > span { display: grid; gap: 3px; min-width: 0; }
+.upload-file strong { overflow-wrap: anywhere; }
+.upload-file small { color: var(--muted-dashboard-text); }
+.light .upload-file small { color: #657089; }
+.workflow-field-error { color: #ffb5c0 !important; font-weight: 700; }
+.light .workflow-field-error { color: var(--crimson-risk) !important; }
+.workflow-notice { display: grid; gap: 6px; border-radius: 14px; padding: 14px 16px; background: rgba(200,148,46,.11); border: 1px solid rgba(200,148,46,.35); }
+.workflow-notice span { color: var(--muted-dashboard-text); line-height: 1.5; }
+.light .workflow-notice span { color: #657089; }
+.editable-list { display: grid; gap: 12px; border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.035); }
+.light .editable-list { border-color: rgba(11,16,47,.1); background: rgba(11,16,47,.025); }
+.editable-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.editable-list-heading > div { display: grid; gap: 4px; }
+.editable-list-heading span { color: var(--muted-dashboard-text); }
+.light .editable-list-heading span { color: #657089; }
+.editable-row { display: grid; align-items: end; gap: 10px; }
+.link-row { grid-template-columns: minmax(140px, .6fr) minmax(220px, 1fr) auto; }
+.question-row { grid-template-columns: 1fr auto; }
+.remove-row { margin-bottom: 1px; }
+.review-section { display: grid; gap: 14px; padding-top: 6px; }
+.review-section + .review-section { border-top: 1px solid rgba(255,255,255,.12); padding-top: 22px; }
+.light .review-section + .review-section { border-color: rgba(11,16,47,.1); }
+.review-section h2 { margin: 0; font-size: 1.08rem; color: var(--cyan); }
+.directory-picker { display: grid; gap: 10px; }
+.workflow-field-help { margin: 0; font-size: 12px; }
 .input-list { display: grid; gap: 10px; }
 .input-list div, .mini-tree, .question, .choice { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
 .light .input-list div, .light .mini-tree, .light .question, .light .choice { background: var(--ghost-white); border-color: rgba(11,16,47,.1); }
 .mini-tree { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--cyan); line-height: 1.7; }
-.choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.choice.active { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(200,148,46,.2); }
-.choice span, .question span { color: var(--muted-dashboard-text); display: block; margin-top: 6px; }
-.light .choice span, .light .question span { color: #657089; }
 .footer-actions { justify-content: space-between; margin-top: 18px; }
+
+@media (max-width: 720px) {
+  .workflow-form-grid, .link-row { grid-template-columns: 1fr; }
+  .question-row { grid-template-columns: 1fr; }
+  .editable-list-heading { align-items: flex-start; }
+  .remove-row { justify-self: start; }
+  .upload-file { align-items: flex-start; }
+}

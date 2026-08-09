@@ -33,6 +33,8 @@ async function main() {
   const storagePath = `${sally.user.id}/rls-checks/${runId}.txt`;
   let jobId;
   let interviewId;
+  let archiveFolderId;
+  let placementFolderId;
 
   try {
     const { data: job, error: jobError } = await sally.supabase
@@ -43,6 +45,14 @@ async function main() {
     if (jobError) throw jobError;
     jobId = job.id;
 
+    const { data: placementFolder, error: placementFolderError } = await sally.supabase
+      .from('archive_folders')
+      .insert({ name: `Sally Placement ${runId}` })
+      .select('id,user_id')
+      .single();
+    if (placementFolderError) throw placementFolderError;
+    placementFolderId = placementFolder.id;
+
     const { data: interview, error: interviewError } = await sally.supabase
       .from('interviews')
       .insert({
@@ -50,12 +60,26 @@ async function main() {
         job_posting_title: `RLS Check ${runId}`,
         candidate_name: 'Isolation Test Candidate',
         interview_date: new Date().toISOString().slice(0, 10),
-        archive_path: `RLS Check/${runId}`
+        archive_path: `RLS Check/${runId}`,
+        archive_folder_id: placementFolder.id
+      })
+      .select('id,user_id,archive_folder_id')
+      .single();
+    if (interviewError) throw interviewError;
+    if (interview.archive_folder_id !== placementFolder.id) throw new Error('Interview directory placement was not persisted.');
+    interviewId = interview.id;
+
+    const { data: archiveFolder, error: archiveFolderError } = await sally.supabase
+      .from('archive_folders')
+      .insert({
+        name: `Sally Folder ${runId}`,
+        job_posting_id: job.id,
+        interview_id: interview.id
       })
       .select('id,user_id')
       .single();
-    if (interviewError) throw interviewError;
-    interviewId = interview.id;
+    if (archiveFolderError) throw archiveFolderError;
+    archiveFolderId = archiveFolder.id;
 
     const { data: leakedRows, error: readError } = await nick.supabase
       .from('interviews')
@@ -82,6 +106,12 @@ async function main() {
     });
     assertBlocked(referenceError, 'Ownership constraint failure: Nick can reference Sally\'s job posting.');
 
+    const { error: folderReferenceError } = await nick.supabase.from('archive_folders').insert({
+      name: `Cross-owner Folder ${runId}`,
+      parent_folder_id: archiveFolder.id
+    });
+    assertBlocked(folderReferenceError, 'Folder ownership failure: Nick can nest a folder under Sally\'s folder.');
+
     const { error: uploadError } = await sally.supabase.storage
       .from('interview-files')
       .upload(storagePath, new TextEncoder().encode('RLS isolation check'), { contentType: 'text/plain' });
@@ -93,7 +123,9 @@ async function main() {
     console.log('Two-user Supabase isolation verification passed.');
   } finally {
     await sally.supabase.storage.from('interview-files').remove([storagePath]);
+    if (archiveFolderId) await sally.supabase.from('archive_folders').delete().eq('id', archiveFolderId);
     if (interviewId) await sally.supabase.from('interviews').delete().eq('id', interviewId);
+    if (placementFolderId) await sally.supabase.from('archive_folders').delete().eq('id', placementFolderId);
     if (jobId) await sally.supabase.from('job_postings').delete().eq('id', jobId);
     await Promise.all([sally.supabase.auth.signOut(), nick.supabase.auth.signOut()]);
   }

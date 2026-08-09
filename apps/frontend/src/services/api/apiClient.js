@@ -1,6 +1,12 @@
 import { getSupabaseClient } from '../supabase/client.js';
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071').replace(/\/$/, '');
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const defaultApiBaseUrl = import.meta.env.MODE === 'desktop'
+  ? globalThis.location.origin
+  : globalThis.location?.protocol?.startsWith('http')
+    ? globalThis.location.origin
+    : 'http://localhost:7071';
+const apiBaseUrl = (configuredApiBaseUrl || defaultApiBaseUrl).replace(/\/$/, '');
 
 export async function apiRequest(path, options = {}) {
   const { data, error } = await getSupabaseClient().auth.getSession();

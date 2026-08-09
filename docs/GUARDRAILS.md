@@ -13,6 +13,8 @@ Interview records, resumes, transcripts, recordings, notes, reports, and identit
 - Collect only what the approved workflow requires.
 - Do not use real candidate data in development, tests, screenshots, prompts, or logs.
 - Keep files in private access-controlled storage.
+- Require an explicit user-selected destination for local exports and treat exported copies as sensitive hiring data.
+- Never grant web content unrestricted filesystem access; executable wrappers must mediate downloads and require an explicit user-selected save destination.
 - Never publish raw object URLs, tokens, API keys, database credentials, or service-role secrets.
 - Define retention, deletion, export, legal hold, and subject-request procedures before pilot use.
 - Redact or minimize prompt payloads sent to future AI providers.

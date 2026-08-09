@@ -61,6 +61,15 @@ export default function useActiveProfile() {
     setAuthenticationMethod(session.authenticationMethod);
   };
 
+  const register = async (registration) => {
+    const result = await authService.register(registration);
+    if (!result.profile) return result;
+    setInitializationError('');
+    setActiveProfile(normalizedProfile(result.profile));
+    setAuthenticationMethod(result.authenticationMethod);
+    return result;
+  };
+
   const signOut = async () => {
     await authService.logout().catch(() => null);
     setActiveProfile(null);
@@ -86,6 +95,7 @@ export default function useActiveProfile() {
     initializationError,
     loading,
     login,
+    register,
     signOut,
     updateProfile
   };

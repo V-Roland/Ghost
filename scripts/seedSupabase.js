@@ -46,7 +46,7 @@ async function seedUserRecords(supabase, demoUser, user) {
   const interviewDate = new Date().toISOString().slice(0, 10);
   const statements = [
     () => supabase.from('profiles').upsert({ id: user.id, display_name: demoUser.displayName, role: demoUser.role }),
-    () => supabase.from('job_postings').upsert({ id: demoUser.jobId, user_id: user.id, title: demoUser.jobTitle, department: 'Engineering' }),
+    () => supabase.from('job_postings').upsert({ id: demoUser.jobId, user_id: user.id, title: demoUser.jobTitle, department: 'Engineering', work_arrangement: 'Hybrid' }),
     () => supabase.from('interviewees').upsert({ id: demoUser.intervieweeId, user_id: user.id, full_name: demoUser.candidateName }),
     () => supabase.from('interviews').upsert({
       id: demoUser.interviewId,

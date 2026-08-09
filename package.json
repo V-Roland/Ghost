@@ -1,8 +1,10 @@
 {
   "name": "ghost-interview-copilot",
   "version": "0.1.0",
+  "author": "Zensar",
   "private": true,
   "description": "Ghost: secure human-in-the-loop interview evidence copilot prototype.",
+  "main": "apps/desktop/src/main.js",
   "type": "module",
   "engines": {
     "node": ">=20",
@@ -17,6 +19,10 @@
     "dev": "npm run dev --workspace apps/frontend",
     "dev:api": "npm run dev --workspace apps/api",
     "build": "npm run build --workspace apps/frontend",
+    "desktop:prepare": "node scripts/prepareDesktopBuild.js",
+    "desktop:build-ui": "npm run build --workspace apps/frontend -- --mode desktop",
+    "desktop:run": "npm run desktop:prepare && npm run desktop:build-ui && electron .",
+    "desktop:package": "npm run desktop:prepare && npm run desktop:build-ui && electron-builder --win",
     "preview": "npm run preview --workspace apps/frontend",
     "supabase:preflight": "node scripts/preflightSupabase.js",
     "supabase:push": "supabase db push",
@@ -26,14 +32,54 @@
     "supabase:reset-local": "supabase db reset",
     "lint:structure": "node scripts/checkRepoStructure.js",
     "lint:guardrails": "node scripts/checkGuardrails.js",
-    "test:api": "node --test apps/api/test/authSecurity.test.js apps/api/test/interviewLifecycle.test.js apps/api/test/supabaseError.test.js",
-    "test:frontend": "node --test apps/frontend/test/archiveRecords.test.js",
+    "test:api": "node --test apps/api/test/archiveFolders.test.js apps/api/test/authSecurity.test.js apps/api/test/embeddedApp.test.js apps/api/test/interviewLifecycle.test.js apps/api/test/supabaseError.test.js",
+    "test:frontend": "node --test apps/frontend/test/archiveDirectories.test.js apps/frontend/test/archiveRecords.test.js apps/frontend/test/interviewDraft.test.js apps/frontend/test/registration.test.js apps/frontend/test/zipArchive.test.js",
     "test:supabase": "node --test scripts/test/supabaseSchema.test.js",
     "test": "npm run test:api && npm run test:frontend && npm run test:supabase",
     "check": "npm run lint:structure && npm run lint:guardrails && npm run test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
-    "dotenv": "^16.4.5"
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.zensar.ghost",
+    "productName": "Ghost Interview Copilot",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "apps/desktop/src/**/*",
+      "apps/api/src/**/*",
+      "apps/frontend/dist/**/*",
+      ".desktop-build/config.json",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "oneClick": false,
+      "perMachine": false
+    }
   }
 }

@@ -12,6 +12,13 @@ Report suspected vulnerabilities privately to the project maintainers. Do not in
 - The API creates a user-scoped Supabase client carrying that token; it does not use the service role for runtime user requests.
 - PostgreSQL RLS is the data authorization boundary.
 - `SUPABASE_SERVICE_ROLE_KEY` is restricted to trusted administration scripts because it bypasses RLS.
+- Electron desktop builds contain only the public Supabase URL and publishable key. They start the same bearer-authenticated API on a random loopback-only port and do not package the service-role key.
+
+## Desktop Runtime
+
+The Electron renderer runs sandboxed with Node.js integration disabled, context isolation enabled, permission requests denied, and navigation restricted to the embedded application origin. HTTP(S) links open in the operating-system browser. No preload bridge or unrestricted filesystem API is exposed; folder exports are assembled as client-side ZIP downloads and Electron requires an explicit save destination for each download.
+
+Production Windows artifacts must be built on a controlled machine, malware-scanned, checksummed, and Authenticode-signed. Unsigned prototype binaries are for internal testing only.
 
 ## Passwords and Sessions
 

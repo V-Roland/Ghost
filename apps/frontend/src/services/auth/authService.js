@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../supabase/client.js';
+import { prepareRegistration } from '../../domain/auth/registration.js';
 
 function authenticationError(error, fallback) {
   const requestError = new Error(error?.message || fallback);
@@ -45,6 +46,29 @@ export async function login({ email, password }) {
     throw authenticationError(error, 'Sign-in failed.');
   }
   return { profile: await loadProfile(data.user), authenticationMethod: 'supabase' };
+}
+
+export async function register(registration) {
+  const { displayName, email, password } = prepareRegistration(registration);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { display_name: displayName }
+    }
+  });
+  if (error || !data.user) {
+    throw authenticationError(error, 'Your account could not be created.');
+  }
+  if (!data.session) {
+    return { verificationRequired: true, email };
+  }
+  return {
+    verificationRequired: false,
+    profile: await loadProfile(data.user),
+    authenticationMethod: 'supabase'
+  };
 }
 
 export async function logout() {
