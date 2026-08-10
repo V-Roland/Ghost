@@ -75,6 +75,7 @@ The shell uses a fixed-height desktop-style window with a scrollable content are
 - Appearance card with Dark and Light theme controls.
 - Workspace defaults for export and review-only signal language.
 - Archive scope is always the current authenticated Supabase user.
+- The home screen opens an after-interview review workspace for a bundled sample or pasted WebVTT transcript. Requests use the authenticated API client, and results present descriptive signals plus transcript evidence for human review.
 - Password-authenticated profiles can change their passphrase; success requests global sign-out and returns to sign-in.
 
 ### Start New Interview Workflow

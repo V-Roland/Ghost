@@ -1,7 +1,8 @@
 import { getSupabaseClient } from '../supabase/client.js';
 
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-const defaultApiBaseUrl = import.meta.env.MODE === 'desktop'
+const viteEnvironment = import.meta.env || {};
+const configuredApiBaseUrl = viteEnvironment.VITE_API_BASE_URL?.trim();
+const defaultApiBaseUrl = viteEnvironment.MODE === 'desktop'
   ? globalThis.location.origin
   : globalThis.location?.protocol?.startsWith('http')
     ? globalThis.location.origin

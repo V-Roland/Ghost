@@ -8,6 +8,7 @@ coverage/
 *.log
 .local/
 .vscode/settings.json
+.idea/
 apps/frontend/.env
 .desktop-build/
 release/

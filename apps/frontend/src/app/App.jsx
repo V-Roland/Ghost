@@ -11,6 +11,7 @@ import ProfileSignIn from '../screens/profile/sign-in/ProfileSignIn.jsx';
 import ProfileSignUp from '../screens/profile/sign-up/ProfileSignUp.jsx';
 import Settings from '../screens/settings/Settings.jsx';
 import StartWorkflow from '../screens/workflow/StartWorkflow.jsx';
+import AfterInterviewReport from '../screens/report/AfterInterviewReport.jsx';
 import * as archiveService from '../services/archive/archiveService.js';
 import { createInterviewWorkspace } from '../services/workflow/workflowService.js';
 
@@ -209,6 +210,7 @@ export default function App() {
           {screen === 'folder' && folderTrail.length > 0 && <ArchiveFolder folderTrail={folderTrail} onBack={handleFolderBack} onOpenFolder={(folder) => handleOpenFolder(folder)} onSelectInterview={handleSelectFolderInterview} />}
           {screen === 'start' && <StartWorkflow step={workflowStep} setWorkflowStep={setWorkflowStep} setScreen={setScreen} onComplete={handleWorkflowComplete} positions={archiveRecords} />}
           {screen === 'settings' && <Settings profile={activeProfile} authenticationMethod={authenticationMethod} onChangePassword={changePassword} theme={theme} setTheme={handleThemeChange} />}
+          {screen === 'report' && <AfterInterviewReport />}
         </div>
         {navigationOpen && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setNavigationOpen(false)} />}
         <BottomNavigation

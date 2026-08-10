@@ -14,6 +14,8 @@ const requiredFiles = [
   'apps/api/test/interviewLifecycle.test.js',
   'apps/api/test/archiveFolders.test.js',
   'apps/api/test/authSecurity.test.js',
+  'apps/api/test/afterInterview.test.js',
+  'apps/api/test/reportGenerator.test.js',
   'apps/api/test/supabaseError.test.js',
   'apps/frontend/test/archiveRecords.test.js',
   'apps/frontend/test/archiveDirectories.test.js',

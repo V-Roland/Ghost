@@ -83,6 +83,9 @@ const required = [
   'apps/frontend/src/hooks/workflow/useInterviewDirectoryOptions.js',
   'apps/frontend/src/services/auth/authService.js',
   'apps/frontend/src/services/api/apiClient.js',
+  'apps/frontend/src/services/api/afterInterviewService.js',
+  'apps/frontend/src/screens/report/AfterInterviewReport.jsx',
+  'apps/frontend/src/styles/report/report.css',
   'apps/frontend/src/services/archive/archiveService.js',
   'apps/frontend/src/services/archive/archiveFileService.js',
   'apps/frontend/src/services/archive/zipArchive.js',
@@ -97,6 +100,11 @@ const required = [
   'apps/frontend/test/registration.test.js',
   'apps/frontend/test/zipArchive.test.js',
   'apps/api/src/routes/profile.js',
+  'apps/api/src/routes/afterInterview.js',
+  'apps/api/src/lib/reportGenerator.js',
+  'apps/api/src/lib/vttParser.js',
+  'apps/api/src/services/graphClient.js',
+  'apps/api/sample/team-sample.vtt',
   'apps/api/src/app.js',
   'apps/api/src/middleware/authenticateRequest.js',
   'apps/api/src/services/supabaseClient.js',
@@ -105,6 +113,10 @@ const required = [
   'apps/api/test/archiveFolders.test.js',
   'apps/api/test/interviewLifecycle.test.js',
   'apps/api/test/supabaseError.test.js',
+  'apps/api/test/afterInterview.test.js',
+  'apps/api/test/reportGenerator.test.js',
+  'apps/api/test/vttParser.test.js',
+  'apps/frontend/test/afterInterviewService.test.js',
   'apps/api/package.json'
 ];
 

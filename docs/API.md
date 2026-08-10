@@ -14,6 +14,12 @@ The middleware verifies the token through Supabase Auth `getUser(token)`, derive
 
 Authentication, signup, recovery, refresh, logout, and password changes use Supabase Auth directly from the frontend. The Express API does not expose password endpoints and never handles password hashes.
 
+## After-interview report
+
+`POST /api/after-interview/ingest` accepts one transcript source: `{ "mode": "sample" }`, `{ "mode": "vtt", "vtt": "..." }`, or the server-only Graph adapter input `{ "mode": "graph", "graphMessageId": "..." }`. Unknown and ownership-related fields are rejected. Pasted VTT is limited to 200 KB and must contain at least one valid cue.
+
+The response contains the selected source, normalized transcript segments, descriptive review signals, and evidence packets. Outputs require human interpretation and are not hiring decisions. See `docs/AFTER_INTERVIEW_REPORT_SCHEMA.md`.
+
 ## Endpoints
 
 ### `GET /health`

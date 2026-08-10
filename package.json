@@ -32,8 +32,8 @@
     "supabase:reset-local": "supabase db reset",
     "lint:structure": "node scripts/checkRepoStructure.js",
     "lint:guardrails": "node scripts/checkGuardrails.js",
-    "test:api": "node --test apps/api/test/archiveFolders.test.js apps/api/test/authSecurity.test.js apps/api/test/embeddedApp.test.js apps/api/test/interviewLifecycle.test.js apps/api/test/supabaseError.test.js",
-    "test:frontend": "node --test apps/frontend/test/archiveDirectories.test.js apps/frontend/test/archiveRecords.test.js apps/frontend/test/interviewDraft.test.js apps/frontend/test/registration.test.js apps/frontend/test/zipArchive.test.js",
+    "test:api": "node --test apps/api/test/afterInterview.test.js apps/api/test/archiveFolders.test.js apps/api/test/authSecurity.test.js apps/api/test/embeddedApp.test.js apps/api/test/interviewLifecycle.test.js apps/api/test/reportGenerator.test.js apps/api/test/supabaseError.test.js apps/api/test/vttParser.test.js",
+    "test:frontend": "node --test apps/frontend/test/afterInterviewService.test.js apps/frontend/test/archiveDirectories.test.js apps/frontend/test/archiveRecords.test.js apps/frontend/test/interviewDraft.test.js apps/frontend/test/registration.test.js apps/frontend/test/zipArchive.test.js",
     "test:supabase": "node --test scripts/test/supabaseSchema.test.js",
     "test": "npm run test:api && npm run test:frontend && npm run test:supabase",
     "check": "npm run lint:structure && npm run lint:guardrails && npm run test"
@@ -46,7 +46,8 @@
   },
   "devDependencies": {
     "electron": "^43.3.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "supabase": "^2.113.0"
   },
   "build": {
     "appId": "com.zensar.ghost",
@@ -58,6 +59,7 @@
     "files": [
       "apps/desktop/src/**/*",
       "apps/api/src/**/*",
+      "apps/api/sample/**/*",
       "apps/frontend/dist/**/*",
       ".desktop-build/config.json",
       "package.json"

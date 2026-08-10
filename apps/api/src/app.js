@@ -4,6 +4,7 @@ import cors from 'cors';
 import { archiveRouter } from './routes/archive.js';
 import { interviewsRouter } from './routes/interviews.js';
 import { profileRouter } from './routes/profile.js';
+import { afterInterviewRouter } from './routes/afterInterview.js';
 import { authenticateRequest } from './middleware/authenticateRequest.js';
 import { assertSupabaseConfiguration } from './services/supabaseClient.js';
 import { HttpError, isHttpError } from './lib/httpError.js';
@@ -78,6 +79,7 @@ export function createGhostApiApp({
   app.use('/api', authenticateRequest);
   app.use('/api/archive', archiveRouter);
   app.use('/api/interviews', interviewsRouter);
+  app.use('/api/after-interview', afterInterviewRouter);
   app.use('/api/profile', profileRouter);
 
   if (frontendPath) {

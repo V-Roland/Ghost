@@ -16,6 +16,7 @@ export default function Home({ profile, jobs, setScreen, setWorkflowStep }) {
           <div className="pill-row">
             <button onClick={() => setScreen('archive')}>Archive</button>
             <button onClick={() => setScreen('settings')}>Settings</button>
+            <button onClick={() => setScreen('report')}>Review Transcript</button>
           </div>
         </div>
       </div>
