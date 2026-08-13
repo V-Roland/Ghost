@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ghost — interview evidence copilot</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <h1>Ghost</h1>
+        <p class="tagline">Interview evidence copilot</p>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <span id="engine-badge" class="badge badge-neutral">engine: …</span>
+      <button id="btn-sample" class="btn btn-secondary" type="button">Load sample interview</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab is-active" data-view="inputs" role="tab">1 · Inputs</button>
+    <button class="tab" data-view="guide" role="tab" disabled>2 · Interview guide</button>
+    <button class="tab" data-view="transcript" role="tab" disabled>3 · Transcript</button>
+    <button class="tab" data-view="report" role="tab" disabled>4 · Evidence report</button>
+  </nav>
+
+  <main>
+    <!-- 1 · INPUTS -->
+    <section id="view-inputs" class="view is-active">
+      <div class="grid-3">
+        <label class="field">
+          <span class="field-label">Candidate portfolio / résumé</span>
+          <textarea id="in-portfolio" rows="16" spellcheck="false"
+            placeholder="Paste the candidate's résumé or portfolio…"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">Job description</span>
+          <textarea id="in-jd" rows="16" spellcheck="false"
+            placeholder="Paste the role requirements…"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">
+            Teams transcript <span class="field-hint">optional — WebVTT or JSON</span>
+          </span>
+          <textarea id="in-transcript" rows="16" spellcheck="false"
+            placeholder="Paste the Teams transcript after the interview, or leave empty to prepare only…"></textarea>
+        </label>
+      </div>
+
+      <div class="actions">
+        <div class="actions-left">
+          <label class="inline-field">
+            <span>Questions</span>
+            <input id="in-count" type="number" min="3" max="20" value="8">
+          </label>
+        </div>
+        <div class="actions-right">
+          <button id="btn-prepare" class="btn btn-primary" type="button">Generate interview guide</button>
+          <button id="btn-review" class="btn btn-primary" type="button">Generate evidence report</button>
+        </div>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- 2 · GUIDE -->
+    <section id="view-guide" class="view">
+      <div class="section-head">
+        <div>
+          <h2 id="guide-title">Interview guide</h2>
+          <p id="guide-sub" class="muted"></p>
+        </div>
+        <div id="guide-competencies" class="chip-row"></div>
+      </div>
+      <div id="guide-list" class="stack"></div>
+    </section>
+
+    <!-- 3 · TRANSCRIPT -->
+    <section id="view-transcript" class="view">
+      <div class="section-head">
+        <div>
+          <h2>Transcript</h2>
+          <p id="transcript-sub" class="muted"></p>
+        </div>
+        <label class="inline-field">
+          <input id="toggle-flagged" type="checkbox">
+          <span>Flagged turns only</span>
+        </label>
+      </div>
+      <div id="transcript-list" class="stack"></div>
+    </section>
+
+    <!-- 4 · REPORT -->
+    <section id="view-report" class="view">
+      <div class="report-head">
+        <div>
+          <h2 id="report-title">Evidence report</h2>
+          <p id="report-headline" class="lede"></p>
+        </div>
+        <button id="btn-export" class="btn btn-secondary" type="button">Copy as Markdown</button>
+      </div>
+
+      <div class="notice" id="report-disclaimer"></div>
+
+      <div class="stat-row" id="report-stats"></div>
+
+      <h3 class="block-title">Moments flagged for review</h3>
+      <div id="signal-list" class="stack"></div>
+
+      <h3 class="block-title">Competency coverage</h3>
+      <div id="coverage-list" class="coverage"></div>
+
+      <h3 class="block-title">Evidence packets</h3>
+      <p class="muted narrow">
+        Each packet ties a question to the answer, the verbatim quote, and the timestamp
+        it came from. Record your own disposition — Ghost never fills this in.
+      </p>
+      <div id="packet-list" class="stack"></div>
+
+      <h3 class="block-title">Candidate baseline</h3>
+      <p class="muted narrow">
+        Every signal above is measured against this candidate's own norms in this
+        conversation — never against other candidates.
+      </p>
+      <div id="baseline-list" class="coverage"></div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

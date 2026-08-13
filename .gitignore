@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Local secrets - Azure OpenAI keys belong in the environment, never in git
+.env
+.env.local
+
+# Source deck. Held out deliberately: V-Roland/Ghost is a public repo and this
+# file contains the Microsoft sponsor's private comment, their name, and the
+# team roster. Delete this line to include it - adding is easy, removing a file
+# from pushed history is not.
+*.pptx

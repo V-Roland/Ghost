@@ -1,0 +1,73 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:12.000
+<v Marcus Webb (Hiring Manager)>Hi Priya, thanks for making the time. I've got about forty five minutes. I'd like to spend most of it on things you've actually built, so I'll be asking you to go quite deep on a few items from your portfolio rather than covering everything.</v>
+
+2
+00:00:13.200 --> 00:00:25.000
+<v Priya Raman>Sounds good, yeah. Um, happy to go deep. Just flag if I'm going too far into the weeds on something, I do that.</v>
+
+3
+00:00:26.000 --> 00:00:48.000
+<v Marcus Webb (Hiring Manager)>Great. So your portfolio says you rebuilt the shipment tracking ingestion pipeline from a nightly batch job to an event-driven system on Azure Functions and Kafka, cutting end-to-end latency from six hours to under ninety seconds. Walk me through that end to end. What was the starting state, and which parts did you personally own?</v>
+
+4
+00:00:49.400 --> 00:02:00.000
+<v Priya Raman>Yeah, so, um, when I joined it was a nightly batch job. It ran at 2am and if it failed you found out at 9. So the SLA was basically, you know, a day. I built the ingestion pipeline in stages, I didn't want a big bang cutover. First thing was, um, I put Kafka in front of the batch loader so we at least had the events durably, and the batch kept running off the topic. That bought us replay, which we didn't have before. Then over about four months we moved each consumer onto Azure Functions one at a time. The tracking one went first because it was the loudest. I owned the design and most of the consumer code, and, uh, one of the platform engineers did the Terraform side of it.</v>
+
+5
+00:02:02.000 --> 00:02:20.000
+<v Marcus Webb (Hiring Manager)>Okay. On the deduplication service in Go, the one that removed roughly eight percent duplicate records from the warehouse feed. What did you try first that did not work, and what did that teach you about the problem?</v>
+
+6
+00:02:21.100 --> 00:03:20.000
+<v Priya Raman>Um, the first version was a bloom filter in memory, and that, yeah, that didn't work at all. It was fine for a day of data but the feed had duplicates coming in like eight weeks apart, because vendors would resend a whole month if their export broke. So the bloom filter never saw them. What it taught me was I hadn't actually asked what a duplicate meant to the business, I'd just assumed it was a near-in-time thing. We ended up with a keyed dedup in Redis with a ninety day TTL and honestly it was way less clever and much better.</v>
+
+7
+00:03:22.000 --> 00:03:44.000
+<v Marcus Webb (Hiring Manager)>You write that you built the Airflow DAGs behind the customer reporting product, processing about two terabytes per day. What was the main trade-off you accepted there, and what did you give up to get it?</v>
+
+8
+00:03:45.500 --> 00:04:50.000
+<v Priya Raman>So the trade-off was, um, we ran one big DAG per customer instead of a shared DAG. Which meant a lot of duplication, like the same transform defined thirty-odd times. What we got for it was blast radius, right, one customer's bad data couldn't stall everyone else's reports. What we gave up was, uh, being able to change a transform in one place. Every schema change turned into a thirty file pull request and people hated it. I'd probably do it the same way again but generate the DAGs instead of copying them.</v>
+
+9
+00:04:52.000 --> 00:05:18.000
+<v Marcus Webb (Hiring Manager)>Let's do one more from your portfolio. You designed the Cosmos DB partitioning strategy for forty million shipment records, after the original single-partition design started throttling at peak. What did you try first that did not work, and what did that teach you about the problem?</v>
+
+10
+00:05:28.600 --> 00:07:00.000
+<v Priya Raman>There are several considerations when designing a partitioning strategy in Cosmos DB. The primary objective is to select a partition key that distributes both storage and request volume evenly across logical partitions, thereby avoiding hot partitions which consume a disproportionate share of provisioned throughput. In practice this means favouring a high-cardinality property that appears in the majority of query predicates, since cross-partition queries incur significant latency and request unit overhead. It is also important to consider the 20 gigabyte logical partition limit, as an unbounded partition key will eventually result in write failures. Where a natural key lacks sufficient cardinality, a synthetic key combining multiple properties is generally recommended.</v>
+
+11
+00:07:02.000 --> 00:07:12.000
+<v Marcus Webb (Hiring Manager)>That's a solid general answer. I'm more interested in your one though. Which part of that partitioning work did you write yourself?</v>
+
+12
+00:07:13.500 --> 00:07:50.000
+<v Priya Raman>Um, right, so. I mean, I was involved in the review. To be honest the team built the ingestion pipeline partitioning before I joined the tracking squad, and I sort of inherited it. I think my part was more, uh, spotting that we were throttling at peak and raising it. The actual key change was mostly someone else on the platform side.</v>
+
+13
+00:07:52.000 --> 00:08:12.000
+<v Marcus Webb (Hiring Manager)>Understood. Let's take the on-call runbook you own for the tracking platform, where you reduced page volume by sixty percent by fixing the three alerts that produced most of the noise. If that platform had to handle ten times the load next quarter, what breaks first and why?</v>
+
+14
+00:08:13.200 --> 00:09:20.000
+<v Priya Raman>There are a few standard failure modes to think about at that kind of scale. Typically the first thing to degrade is queue consumer lag, because consumers scale more slowly than producers do. It is important to ensure that back-pressure is applied upstream rather than allowing memory to grow unbounded. Generally speaking, the engineer on rotation would want visibility into consumer lag, error rates and dead letter depth, and the documented procedure would usually say to scale consumers first and investigate afterwards.</v>
+
+15
+00:09:22.000 --> 00:09:35.000
+<v Marcus Webb (Hiring Manager)>You list Prometheus on your portfolio. What's the most recent thing you built with it, and who used it?</v>
+
+16
+00:09:36.400 --> 00:10:20.000
+<v Priya Raman>Most recent was, um, a set of recording rules for the tracking consumers, because our lag dashboard was querying raw series and taking like eight seconds to load. So I pre-aggregated the lag per topic per consumer group. The on-call rota used it, mostly, and the support team had it on a wall screen. It's not glamorous but it took the dashboard to under a second.</v>
+
+17
+00:10:22.000 --> 00:10:30.000
+<v Marcus Webb (Hiring Manager)>That's helpful, thank you. Anything you want to ask me before we wrap?</v>
+
+18
+00:10:31.000 --> 00:10:40.000
+<v Priya Raman>Yeah, um, what does the on-call rotation actually look like day to day for this team?</v>
